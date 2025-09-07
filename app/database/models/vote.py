@@ -27,24 +27,21 @@ class VoteModel(BaseModel):
         autoincrement=True,
     )
     complaint_id: Mapped[int] = mapped_column(
-        ForeignKey(
-            "complaints.id",
-            ondelete="CASCADE",
-        ),
+        ForeignKey("complaints.id", ondelete="CASCADE"),
         index=True,
     )
     moderator_id: Mapped[int] = mapped_column(
-        ForeignKey(
-            "users.id",
-            ondelete="RESTRICT",
-        ),
+        ForeignKey("users.id", ondelete="RESTRICT"),
         index=True,
     )
     decision: Mapped[int] = mapped_column(Integer, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
-    complaint = relationship("ComplaintModel", back_populates="votes")
+    complaint = relationship(
+        "ComplaintModel",
+        back_populates="votes",
+    )
     moderator = relationship(
         "UserModel",
         foreign_keys=[moderator_id],

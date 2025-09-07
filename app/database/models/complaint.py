@@ -39,12 +39,11 @@ class ComplaintModel(BaseModel):
         default=ComplaintStatus.PENDING,
         index=True,
     )
+
     user_id: Mapped[int] = mapped_column(
-        ForeignKey(
-            "users.id",
-            ondelete="RESTRICT",
-        ),
+        ForeignKey("users.id", ondelete="RESTRICT"),
         index=True,
+        nullable=False,
     )
 
     message_thread_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
@@ -54,18 +53,19 @@ class ComplaintModel(BaseModel):
     problem: Mapped[str] = mapped_column(Text, nullable=False)
 
     approved_by: Mapped[t.Optional[int]] = mapped_column(
-        ForeignKey(
-            "users.id",
-            ondelete="SET NULL",
-        )
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
     )
     approved_at: Mapped[t.Optional[datetime]] = mapped_column(DateTime)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[t.Optional[datetime]] = mapped_column(DateTime)
 
-    user: Mapped["UserModel"] = relationship(back_populates="complaints")
-    admin: Mapped[t.Optional["UserModel"]] = relationship(foreign_keys=[approved_by])
+    user: Mapped["UserModel"] = relationship(
+        "UserModel",
+        foreign_keys=[user_id],
+        back_populates="complaints",
+    )
 
     votes: Mapped[t.List["VoteModel"]] = relationship(
         back_populates="complaint",

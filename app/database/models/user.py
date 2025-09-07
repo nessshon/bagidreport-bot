@@ -20,6 +20,10 @@ from sqlalchemy.orm import (
 
 from ._base import BaseModel
 
+if t.TYPE_CHECKING:
+    from .vote import VoteModel
+    from .complaint import ComplaintModel
+
 
 class UserModel(BaseModel):
     __tablename__ = "users"
@@ -32,7 +36,6 @@ class UserModel(BaseModel):
         String(64),
         default=ChatMemberStatus.MEMBER.value,
     )
-
     user_id: Mapped[int] = mapped_column(
         BigInteger,
         unique=True,
@@ -47,16 +50,31 @@ class UserModel(BaseModel):
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
     banned_at: Mapped[t.Optional[datetime]] = mapped_column(DateTime)
     banned_by: Mapped[t.Optional[int]] = mapped_column(
-        ForeignKey(
-            "users.id",
-            ondelete="SET NULL",
-        ),
+        ForeignKey("users.id", ondelete="SET NULL")
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
-        nullable=False,
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+    topic: Mapped["UserTopicModel"] = relationship(
+        "UserTopicModel",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    complaints: Mapped[t.List["ComplaintModel"]] = relationship(
+        back_populates="user",
+        foreign_keys="ComplaintModel.user_id",
+    )
+    moderator_votes: Mapped[t.List["VoteModel"]] = relationship(
+        "VoteModel",
+        back_populates="moderator",
+        foreign_keys="VoteModel.moderator_id",
+        viewonly=True,
+    )
+    approved_complaints: Mapped[t.List["ComplaintModel"]] = relationship(
+        "ComplaintModel",
+        foreign_keys="ComplaintModel.approved_by",
+        viewonly=True,
     )
 
 
@@ -68,15 +86,11 @@ class UserTopicModel(BaseModel):
         autoincrement=True,
     )
     user_id: Mapped[int] = mapped_column(
-        ForeignKey(
-            "users.id",
-            ondelete="CASCADE",
-        ),
+        ForeignKey("users.id", ondelete="CASCADE"),
         unique=True,
         index=True,
     )
     message_thread_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     user: Mapped[UserModel] = relationship(back_populates="topic")
