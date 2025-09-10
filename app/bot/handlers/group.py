@@ -24,6 +24,13 @@ from app.database.models import UserModel, VoteModel, ComplaintModel
 logger = logging.getLogger(__name__)
 router = Router()
 
+
+@router.message(Command("id"))
+async def group_id_command(message: Message) -> None:
+    text = hcode(message.chat.id)
+    await message.reply(text)
+
+
 router.message.filter(
     *[
         F.chat.id == GROUP_ID,
@@ -36,12 +43,6 @@ router.callback_query.filter(
         F.message.chat.type.in_({ChatType.GROUP, ChatType.SUPERGROUP}),
     ]
 )
-
-
-@router.message(Command("group_id"))
-async def group_id_command(message: Message) -> None:
-    text = hcode(message.chat.id)
-    await message.reply(text)
 
 
 @router.message(Command("info"))
