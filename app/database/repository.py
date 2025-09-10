@@ -89,6 +89,17 @@ class BaseRepository(t.Generic[_TModel]):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def list_in(
+        self,
+        field: t.Any,
+        values: t.List[t.Any],
+    ) -> t.List[_TModel]:
+        if not values:
+            return []
+        stmt = select(self.model).where(field.in_(values))
+        res = await self.session.execute(stmt)
+        return list(res.scalars().all())
+
     async def all(self) -> t.List[_TModel]:
         stmt: Select = select(self.model)
         result = await self.session.execute(stmt)

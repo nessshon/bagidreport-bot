@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: 47b3469c2912
+Revision ID: f2bf73449379
 Revises: 
-Create Date: 2025-09-07 23:23:33.297787
+Create Date: 2025-09-11 02:20:03.289790
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '47b3469c2912'
+revision: str = 'f2bf73449379'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -29,10 +29,7 @@ def upgrade() -> None:
     sa.Column('full_name', sa.String(), nullable=True),
     sa.Column('language_code', sa.String(length=8), nullable=True),
     sa.Column('is_banned', sa.Boolean(), nullable=False),
-    sa.Column('banned_at', sa.DateTime(), nullable=True),
-    sa.Column('banned_by', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['banned_by'], ['users.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_users_user_id'), 'users', ['user_id'], unique=True)
@@ -41,17 +38,18 @@ def upgrade() -> None:
     sa.Column('status', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('message_thread_id', sa.BigInteger(), nullable=False),
-    sa.Column('message_id', sa.BigInteger(), nullable=False),
-    sa.Column('bag_id', sa.String(length=128), nullable=False),
+    sa.Column('message_id', sa.BigInteger(), nullable=True),
+    sa.Column('bag_id', sa.String(length=64), nullable=False),
     sa.Column('problem', sa.Text(), nullable=False),
-    sa.Column('approved_by', sa.Integer(), nullable=True),
-    sa.Column('approved_at', sa.DateTime(), nullable=True),
+    sa.Column('resolved_by', sa.Integer(), nullable=True),
+    sa.Column('resolved_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.CheckConstraint('status IN (0,1,2)', name='ck_complaint_status_int'),
-    sa.ForeignKeyConstraint(['approved_by'], ['users.id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['resolved_by'], ['users.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='RESTRICT'),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('message_id', name='ux_complaints_message_id')
     )
     op.create_index(op.f('ix_complaints_bag_id'), 'complaints', ['bag_id'], unique=False)
     op.create_index(op.f('ix_complaints_status'), 'complaints', ['status'], unique=False)
@@ -59,10 +57,10 @@ def upgrade() -> None:
     op.create_index(op.f('ix_complaints_user_id'), 'complaints', ['user_id'], unique=False)
     op.create_table('users.topics',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.BigInteger(), nullable=False),
     sa.Column('message_thread_id', sa.BigInteger(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.user_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id', name='ux_topics_user')
     )
@@ -70,12 +68,12 @@ def upgrade() -> None:
     op.create_table('votes',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('complaint_id', sa.Integer(), nullable=False),
-    sa.Column('moderator_id', sa.Integer(), nullable=False),
+    sa.Column('moderator_id', sa.BigInteger(), nullable=False),
     sa.Column('decision', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.CheckConstraint('decision IN (0,1)', name='ck_vote_decision_int'),
     sa.ForeignKeyConstraint(['complaint_id'], ['complaints.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['moderator_id'], ['users.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['moderator_id'], ['users.user_id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('complaint_id', 'moderator_id', name='ux_vote_once_per_moderator')
     )

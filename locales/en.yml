@@ -1,0 +1,107 @@
+messages:
+
+  main: |
+    🤖 This bot accepts reports about Bag ID issues in TON Storage.
+    
+    <b>Send your message in the exact format:</b>
+    <code>Bag ID: &lt;64 hex characters&gt;
+    &lt;problem description — up to 2048 characters&gt;</code>
+
+    <b>Example:</b>
+    <code>Bag ID: 9f3a1c...
+    Data hasn’t been loading since the evening of 10.09.2025. An error appears …</code>
+
+  help: |
+    ℹ️ <b>Help</b>
+    
+    <b>What the bot does:</b>
+    Accepts reports about Bag ID issues in TON Storage and forwards them for moderation.
+    
+    <b>How to submit a report:</b>
+    Your message must contain two lines:
+    <code>Bag ID: &lt;64 hex characters&gt;
+    &lt;problem description — up to 2048 characters&gt;</code>
+    
+    <b>Example:</b>
+    <code>Bag ID: 9f3a1c...
+    Data hasn’t been loading since 10.09.2025, an error appears …</code>
+
+    <b>Commands:</b>
+    /start — start the bot  
+    /help — open this help  
+    /lang — change the interface language
+    
+    <b>Tips:</b>
+    • Describe the problem clearly and in detail — details speed up processing.  
+    • If you made a mistake — send a new message in the correct format.
+    
+    <b>Privacy:</b>
+    Your Bag ID and message text are visible to moderators for troubleshooting.
+
+  select_language: |
+    🌐 <b>Choose a language.</b>
+
+  input_captcha: |
+    🔐 <b>Enter the captcha.</b>
+
+  complaint_sent: |
+    ✅ <b>Report submitted!</b>
+
+    <b>ID:</b> <code>{complaint_id}</code>
+    <b>Bag ID:</b> <code>{complaint_bag_id}</code>
+
+    Your report has been sent for review.
+
+errors:
+
+  invalid_format: |
+    <blockquote><b>Invalid message format.</b>
+    
+    Please send your message exactly as described above.</blockquote>
+
+  bag_id_invalid: |
+    <blockquote><b>Invalid Bag ID.</b>
+    
+    Exactly 64 hexadecimal characters (0–9, a–f/A–F) are allowed, without the <code>0x</code> prefix.</blockquote>
+
+  problem_required: |
+    <blockquote><b>Please describe the problem in more detail.</b>
+    
+    The description must not be empty and should contain at least a few words.</blockquote>
+
+  problem_too_long: |
+    <blockquote><b>Description is too long.</b>
+    
+    Maximum length — 2048 characters.</blockquote>
+
+  non_text: |
+    <blockquote><b>Text messages only.</b></blockquote>
+
+  captcha_wrong: |
+    <blockquote><b>Incorrect captcha.</b></blockquote>
+
+  captcha_expired: |
+    <blockquote><b>Captcha time has expired.</b>
+    
+    Please try again.</blockquote>
+
+  unknown: |
+    <b>❗ An unexpected error occurred.</b>
+    
+    Please try again.
+
+buttons:
+  to_main: "‹ Home"
+  cancel: "× Cancel"
+
+  lang:
+    ru: "Russian"
+    en: "English"
+
+commands:
+  start:
+    description: "Start the bot"
+  help:
+    description: "Show information"
+  lang:
+    description: "Change interface language"

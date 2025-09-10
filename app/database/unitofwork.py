@@ -10,9 +10,13 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
 )
+from sqlalchemy.orm import joinedload
 
 from .models import (
     UserModel,
+    UserTopicModel,
+    ComplaintModel,
+    VoteModel,
 )
 from .repository import BaseRepository as BRepo
 
@@ -23,13 +27,20 @@ class UnitOfWork:
     session: AsyncSession
 
     user: BRepo[UserModel]
+    user_topic: BRepo[UserTopicModel]
+    complaint: BRepo[ComplaintModel]
+    vote: BRepo[VoteModel]
 
     def __init__(self, session_factory: async_sessionmaker) -> None:
         self.session_factory = session_factory
 
     async def __aenter__(self) -> UnitOfWork:
         self.session = self.session_factory()
+
         self.user = BRepo(UserModel, self.session)
+        self.user_topic = BRepo(UserTopicModel, self.session)
+        self.complaint = BRepo(ComplaintModel, self.session)
+        self.vote = BRepo(VoteModel, self.session)
 
         return self
 
@@ -79,3 +90,27 @@ class UnitOfWork:
             "users_active": users_active,
             "users_inactive": users_inactive,
         }
+
+    async def get_complaint_by_message_id(
+        self,
+        message_id: int,
+    ) -> t.Optional[ComplaintModel]:
+        stmt = (
+            select(ComplaintModel)
+            .options(
+                joinedload(ComplaintModel.user),
+                joinedload(ComplaintModel.votes).joinedload(VoteModel.moderator),
+            )
+            .where(ComplaintModel.message_id == message_id)
+        )
+        res = await self.session.execute(stmt)
+        return res.scalar_one_or_none()
+
+    async def get_complaint_votes(self, complaint_id: int) -> t.List[VoteModel]:
+        stmt = (
+            select(VoteModel)
+            .options(joinedload(VoteModel.moderator))
+            .where(VoteModel.complaint_id == complaint_id)
+        )
+        res = await self.session.execute(stmt)
+        return list(res.scalars().all())

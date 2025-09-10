@@ -1,0 +1,69 @@
+messages:
+
+  command_info: |
+    👤 <b>Пользователь</b>
+
+    <b>Telegram ID:</b> <code>{user_id}</code>
+    <b>Username:</b> {username}
+
+    <b>Имя:</b> {full_name}
+    <b>Код языка:</b> {language_code}
+
+    <b>Состояние:</b> {state}
+    <b>Заблокирован:</b> {is_banned}
+
+    <b>Дата регистрации:</b> {created_at}
+
+  command_ban: |
+    🔴 <b>{user_mention} заблокирован!</b>
+
+  command_unban: |
+    🟢 <b>{user_mention} разблокирован!</b>
+
+  complaint_alert: |
+    📋 <b>Обращение #Complaint{complaint_id}</b>
+
+    <b>Bag ID:</b> <code>{bag_id}</code>
+
+    <b>Проблема:</b>
+    <blockquote expandable>{problem}</blockquote>
+
+  complaint_approved: |
+    <b>Одобрили:</b> {approved}
+
+  complaint_rejected: |
+    <b>Отклонили:</b> {rejected}
+
+  complaint_status_pending: |
+    ⚠️ <b>Обращение на рассмотрении</b>
+
+  complaint_status_rejected: |
+    🚫 <b>Обращение отклонено:</b> {resolved_by}
+
+  complaint_status_approved: |
+    🔰 <b>Обращение одобрено:</b> {resolved_by}
+
+  complaint_waiting: |
+    ⏳ <b>Ожидается финальное решение:</b> {admins}
+
+buttons:
+  reject: "× Отклонить"
+  approve: "✓ Одобрить"
+
+commands:
+  info:
+    description: "Информация пользователя"
+  stats:
+    description: "Статистика пользователя"
+  ban:
+    description: "Заблокировать пользователя"
+  unban:
+    description: "Разблокировать пользователя"
+
+common:
+  banned:
+    _True: "Да"
+    _False: "Нет"
+  state:
+    member: "Активен"
+    kicked: "Неактивен"

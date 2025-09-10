@@ -4,6 +4,8 @@ import typing as t
 from datetime import datetime
 
 from aiogram.enums import ChatMemberStatus
+from aiogram.utils.link import create_tg_link
+from aiogram.utils.markdown import hlink
 from sqlalchemy import (
     BigInteger,
     String,
@@ -48,11 +50,6 @@ class UserModel(BaseModel):
     language_code: Mapped[t.Optional[str]] = mapped_column(String(8))
 
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
-    banned_at: Mapped[t.Optional[datetime]] = mapped_column(DateTime)
-    banned_by: Mapped[t.Optional[int]] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL")
-    )
-
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     topic: Mapped["UserTopicModel"] = relationship(
@@ -71,11 +68,18 @@ class UserModel(BaseModel):
         foreign_keys="VoteModel.moderator_id",
         viewonly=True,
     )
-    approved_complaints: Mapped[t.List["ComplaintModel"]] = relationship(
+    resolved_complaints: Mapped[t.List["ComplaintModel"]] = relationship(
         "ComplaintModel",
-        foreign_keys="ComplaintModel.approved_by",
+        foreign_keys="ComplaintModel.resolved_by",
         viewonly=True,
     )
+
+    @property
+    def mention(self) -> str:
+        if self.username is not None:
+            return f"@{self.username}"
+        link = create_tg_link("user", id=self.user_id)
+        return hlink(title=self.full_name, url=link)
 
 
 class UserTopicModel(BaseModel):
@@ -86,7 +90,7 @@ class UserTopicModel(BaseModel):
         autoincrement=True,
     )
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("users.user_id", ondelete="CASCADE"),
         unique=True,
         index=True,
     )

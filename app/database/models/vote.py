@@ -31,7 +31,7 @@ class VoteModel(BaseModel):
         index=True,
     )
     moderator_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="RESTRICT"),
+        ForeignKey("users.user_id", ondelete="RESTRICT"),
         index=True,
     )
     decision: Mapped[int] = mapped_column(Integer, nullable=False)
