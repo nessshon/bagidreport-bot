@@ -23,9 +23,10 @@ from app.database.models import UserModel, VoteModel, ComplaintModel
 
 logger = logging.getLogger(__name__)
 router = Router()
+id_router = Router()
 
 
-@router.message(Command("id"))
+@id_router.message(Command("id"))
 async def group_id_command(message: Message) -> None:
     text = hcode(message.chat.id)
     await message.reply(text)

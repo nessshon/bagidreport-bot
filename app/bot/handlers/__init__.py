@@ -9,8 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 def register(dp: Dispatcher) -> None:
-    dp.include_router(group.router)
     dp.include_router(private.router)
+
+    dp.include_router(group.router)
+    dp.include_router(group.id_router)
 
     logger.info("Handlers registered")
 
