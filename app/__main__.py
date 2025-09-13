@@ -29,7 +29,7 @@ async def on_startup(ctx: Context) -> None:
 
     await ctx.db.start()
 
-    middlewares.register(ctx.dp, ctx.bot)
+    middlewares.register(ctx.dp)
     handlers.register(ctx.dp)
 
     with suppress(TelegramRetryAfter):

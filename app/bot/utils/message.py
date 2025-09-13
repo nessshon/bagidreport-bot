@@ -32,24 +32,22 @@ def validate_complaint_message(
         return None, "invalid_format"
 
     first_line = lines[0].strip()
-    bag_id_re = re.compile(r"^Bag ID:\s*([A-Fa-f0-9]{64})$")
+    bag_id_re = re.compile(r"^[A-Fa-f0-9]{64}$")
     bag_id_match = bag_id_re.match(first_line)
 
     if not bag_id_match:
-        if first_line.startswith("Bag ID:"):
-            return None, "bag_id_invalid"
-        return None, "invalid_format"
+        return None, "bag_id_invalid"
 
-    bag_id = bag_id_match.group(1).lower()
+    bag_id = first_line.lower()
     problem = "\n".join(lines[1:]).strip()
 
     if (
         not problem
         or len(problem.split()) < 3
-        or problem.startswith("<")
-        and problem.endswith(">")
+        or (problem.startswith("<") and problem.endswith(">"))
     ):
         return None, "problem_required"
+
     if len(problem) > 2048:
         return None, "problem_too_long"
 

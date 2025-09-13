@@ -275,7 +275,7 @@ class ComplaintManager:
             self.localizer(
                 "messages.complaint_alert",
                 complaint_id=self.complaint.id,
-                bag_id=self.complaint.bag_id,
+                bag_id=self.complaint.bag_id.upper(),
                 problem=markdown.hitalic(self.complaint.problem),
             )
         ]
