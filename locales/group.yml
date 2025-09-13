@@ -23,7 +23,7 @@ messages:
   complaint_alert: |
     📋 <b>Обращение #Complaint{complaint_id}</b>
 
-    <b>Bag ID:</b> <code>{bag_id}</code>
+    <b><a href="https://mytonstorage.org/api/v1/gateway/{bag_id}">Bag ID</a>:</b> <code>{bag_id}</code>
 
     <b>Проблема:</b>
     <blockquote expandable>{problem}</blockquote>
@@ -45,6 +45,9 @@ messages:
 
   complaint_waiting: |
     ⏳ <b>Ожидается финальное решение:</b> {admins}
+
+  throttled: |
+    Слишком часто. Подождите {ttl} сек.
 
 buttons:
   reject: "× Отклонить"
