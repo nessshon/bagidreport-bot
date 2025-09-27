@@ -44,6 +44,9 @@ messages:
   input_captcha: |
     🔐 <b>Введите капчу.</b>
 
+  select_reason: |
+    ❓ <b>Выберите причину жалобы:</b>
+
   complaint_sent: |
     ✅ <b>Обращение отправлено!</b>
 
@@ -93,9 +96,22 @@ errors:
     
     Попробуйте ещё раз.
 
+reason:
+  spam: "Спам"
+  scam: "Скам"
+  malware: "Вирусы"
+  abuse: "Оскорбления"
+  copyright: "Авторские права"
+  child_abuse: "Эксплуатация детей"
+  inappropriate: "Неприемлемое"
+  illegal_content: "Запрещённое"
+  privacy_violation: "Утечка данных"
+  other: "Прочее"
+
 buttons:
   to_main: "‹ На главную"
   cancel: "× Отменить"
+  back: "‹ Назад"
 
   lang:
     ru: "Русский"

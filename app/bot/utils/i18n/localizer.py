@@ -50,7 +50,6 @@ class Localizer:
         try:
             return template_str.format_map(_SafeDict(kwargs))
         except (Exception,):
-            logger.warning("Template format_map failed", exc_info=True)
             return template_str
 
     def __call__(

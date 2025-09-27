@@ -6,18 +6,10 @@ import typing as t
 
 from aiogram.enums import ChatMemberStatus
 from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_sessionmaker,
-)
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import joinedload
 
-from .models import (
-    UserModel,
-    UserTopicModel,
-    ComplaintModel,
-    VoteModel,
-)
+from .models import UserModel, UserTopicModel, ComplaintModel, VoteModel
 from .repository import BaseRepository as BRepo
 
 logger = logging.getLogger(__name__)

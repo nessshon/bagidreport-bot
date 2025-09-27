@@ -25,6 +25,8 @@ messages:
 
     <b><a href="https://mytonstorage.org/api/v1/gateway/{bag_id}">Bag ID</a>:</b> <code>{bag_id}</code>
 
+    <b>Причина:</b> {reason}
+
     <b>Проблема:</b>
     <blockquote expandable>{problem}</blockquote>
 
@@ -46,10 +48,38 @@ messages:
   complaint_waiting: |
     ⏳ <b>Ожидается финальное решение:</b> {admins}
 
+  change_reason: |
+    📋 <b>Обращение #Complaint{complaint_id}</b>
+
+    <b><a href="https://mytonstorage.org/api/v1/gateway/{bag_id}">Bag ID</a>:</b> <code>{bag_id}</code>
+
+    <b>Причина:</b> {reason}
+
+    <b>Проблема:</b>
+    <blockquote expandable>{problem}</blockquote>
+
+    ❓ <b>Выберите причину жалобы:</b>
+
   throttled: |
     Слишком часто. Подождите {ttl} сек.
 
+  throttled_message: |
+    Обработано другим пользователем. Повторите через {ttl} сек.
+
+reason:
+  spam: "Спам"
+  scam: "Скам"
+  malware: "Вирусы"
+  abuse: "Оскорбления"
+  copyright: "Авторские права"
+  child_abuse: "Эксплуатация детей"
+  inappropriate: "Неприемлемое"
+  illegal_content: "Запрещённое"
+  privacy_violation: "Утечка данных"
+  other: "Прочее"
+
 buttons:
+  back: "‹ Назад"
   reject: "× Отклонить"
   approve: "✓ Одобрить"
 

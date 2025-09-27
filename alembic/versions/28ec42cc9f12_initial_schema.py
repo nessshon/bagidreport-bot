@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: f2bf73449379
+Revision ID: 28ec42cc9f12
 Revises: 
-Create Date: 2025-09-11 02:20:03.289790
+Create Date: 2025-09-27 22:16:07.317409
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'f2bf73449379'
+revision: str = '28ec42cc9f12'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -29,7 +29,7 @@ def upgrade() -> None:
     sa.Column('full_name', sa.String(), nullable=True),
     sa.Column('language_code', sa.String(length=8), nullable=True),
     sa.Column('is_banned', sa.Boolean(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_users_user_id'), 'users', ['user_id'], unique=True)
@@ -40,11 +40,12 @@ def upgrade() -> None:
     sa.Column('message_thread_id', sa.BigInteger(), nullable=False),
     sa.Column('message_id', sa.BigInteger(), nullable=True),
     sa.Column('bag_id', sa.String(length=64), nullable=False),
+    sa.Column('reason', sa.Text(), nullable=False),
     sa.Column('problem', sa.Text(), nullable=False),
     sa.Column('resolved_by', sa.Integer(), nullable=True),
-    sa.Column('resolved_at', sa.DateTime(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('resolved_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.CheckConstraint('status IN (0,1,2)', name='ck_complaint_status_int'),
     sa.ForeignKeyConstraint(['resolved_by'], ['users.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='RESTRICT'),
@@ -59,7 +60,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.BigInteger(), nullable=False),
     sa.Column('message_thread_id', sa.BigInteger(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.user_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id', name='ux_topics_user')
@@ -70,7 +71,7 @@ def upgrade() -> None:
     sa.Column('complaint_id', sa.Integer(), nullable=False),
     sa.Column('moderator_id', sa.BigInteger(), nullable=False),
     sa.Column('decision', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.CheckConstraint('decision IN (0,1)', name='ck_vote_decision_int'),
     sa.ForeignKeyConstraint(['complaint_id'], ['complaints.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['moderator_id'], ['users.user_id'], ondelete='RESTRICT'),

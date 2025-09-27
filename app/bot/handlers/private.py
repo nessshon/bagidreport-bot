@@ -7,11 +7,7 @@ from aiogram import Router, F, flags
 from aiogram.enums import ChatType, ContentType
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import (
-    ChatMemberUpdated,
-    Message,
-    CallbackQuery,
-)
+from aiogram.types import ChatMemberUpdated, Message, CallbackQuery
 
 from ..filters import IsBannedFilter
 from ..utils import keyboards
@@ -66,6 +62,19 @@ async def select_language_window(
     await state.set_state(UserState.MAIN)
 
 
+async def select_reason(
+    message: Message,
+    state: FSMContext,
+    localizer: Localizer,
+) -> None:
+    text = localizer("messages.select_reason")
+    reply_markup = keyboards.select_reason(localizer)
+    msg = await message.answer(text, reply_markup=reply_markup)
+    await delete_last_message_id(message.bot, state, message.chat.id)
+    await save_last_message_id(state, msg.message_id)
+    await state.set_state(UserState.REASON)
+
+
 async def input_captcha_window(
     message: Message,
     state: FSMContext,
@@ -76,7 +85,7 @@ async def input_captcha_window(
     if error_code is not None:
         caption += "\n" + localizer(f"errors.{error_code}")
     image, captcha_solution = await generate_captcha()
-    reply_markup = keyboards.create_button(localizer, "cancel")
+    reply_markup = keyboards.create_button(localizer, "back")
     msg = await message.answer_photo(image, caption, reply_markup=reply_markup)
     await delete_last_message_id(message.bot, state, message.chat.id)
     await save_last_message_id(state, msg.message_id)
@@ -183,6 +192,7 @@ async def captcha_message_handler(
                 user_id=user_model.user_id,
                 message_thread_id=topic_manager.topic_id,
                 bag_id=state_data.get("bag_id"),
+                reason=state_data.get("reason"),
                 problem=state_data.get("problem"),
                 created_at=datetime.now(TIMEZONE),
             )
@@ -224,7 +234,7 @@ async def message_handler(
         complaint_data, error_code = validate_complaint_message(message.text)
         if error_code is None:
             await state.update_data(**complaint_data)
-            await input_captcha_window(message, state, localizer)
+            await select_reason(message, state, localizer)
             return
         else:
             await main_window(message, state, localizer, error_code)
@@ -232,6 +242,32 @@ async def message_handler(
         await main_window(message, state, localizer, "non_text")
 
     await delete_message(message)
+
+
+@router.callback_query(UserState.REASON)
+async def select_reason_callback_query_handler(
+    call: CallbackQuery,
+    state: FSMContext,
+    localizer: Localizer,
+) -> None:
+    reason_map: dict = localizer("reason")  # type: ignore
+    if call.data == "back":
+        await main_window(call.message, state, localizer)
+    if call.data in reason_map.keys():
+        await state.update_data(reason=call.data)
+        await input_captcha_window(call.message, state, localizer)
+    await call.answer()
+
+
+@router.callback_query(UserState.CAPTCHA)
+async def captcha_callback_query_handler(
+    call: CallbackQuery,
+    state: FSMContext,
+    localizer: Localizer,
+) -> None:
+    if call.data == "back":
+        await select_reason(call.message, state, localizer)
+    await call.answer()
 
 
 @router.callback_query()

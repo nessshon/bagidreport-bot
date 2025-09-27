@@ -3,23 +3,19 @@ from datetime import datetime
 
 from aiogram import Router, F
 from aiogram.enums import ChatType
-from aiogram.filters import (
-    Command,
-    CommandObject,
-)
-from aiogram.types import (
-    Message,
-    CallbackQuery,
-)
+from aiogram.filters import Command, CommandObject
+from aiogram.types import Message, CallbackQuery
 from aiogram.utils.markdown import hcode
 
-from app.bot.utils.i18n import Localizer
-from app.bot.utils.topic import ComplaintManager
-from app.config import GROUP_ID, TIMEZONE
-from app.context import Context
-from app.database import UnitOfWork
-from app.database.enums import VoteDecision, ComplaintStatus
-from app.database.models import UserModel, VoteModel, ComplaintModel
+from ..utils import keyboards
+from ..utils.i18n import Localizer
+from ..utils.topic import ComplaintManager
+from ...api.mytonstorage import AddReportPayload
+from ...config import GROUP_ID, TIMEZONE
+from ...context import Context
+from ...database import UnitOfWork
+from ...database.enums import VoteDecision, ComplaintStatus
+from ...database.models import UserModel, VoteModel, ComplaintModel
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -96,7 +92,8 @@ async def update_vote_status(
     complaint: ComplaintModel,
     user_model: UserModel,
     decision: VoteDecision,
-):
+) -> None:
+    now = datetime.now(TIMEZONE)
     existing = await uow.vote.get(
         complaint_id=complaint.id,
         moderator_id=user_model.user_id,
@@ -116,7 +113,7 @@ async def update_vote_status(
                 },
                 values={
                     "decision": decision,
-                    "created_at": datetime.now(TIMEZONE),
+                    "created_at": now,
                 },
             )
     else:
@@ -125,7 +122,7 @@ async def update_vote_status(
                 complaint_id=complaint.id,
                 moderator_id=user_model.user_id,
                 decision=decision,
-                created_at=datetime.now(TIMEZONE),
+                created_at=now,
             )
         )
 
@@ -136,6 +133,7 @@ async def update_vote_status(
 async def callback_query_handler(
     call: CallbackQuery,
     ctx: Context,
+    localizer: Localizer,
     user_model: UserModel,
     uow: UnitOfWork,
 ) -> None:
@@ -146,10 +144,30 @@ async def callback_query_handler(
         await call.answer()
         return
 
+    now = datetime.now(TIMEZONE)
+    reason_map: dict = localizer("reason")  # noqa
     complaint_manager = ComplaintManager(ctx, uow, complaint)
+
     await complaint_manager.ensure_admins()
 
-    if call.data in {"approve", "reject"}:
+    if call.data == "change_reason":
+        text = localizer(
+            "messages.change_reason",
+            complaint_id=complaint.id,
+            bag_id=complaint.bag_id,
+            reason=complaint.reason,
+            problem=complaint.problem,
+        )
+        reply_markup = keyboards.select_reason(localizer)
+        await call.message.edit_text(text, reply_markup=reply_markup)
+
+    elif call.data in reason_map.keys():
+        complaint.reason = call.data
+        complaint.updated_at = now
+        await uow.complaint.upsert(complaint)
+        await complaint_manager.update_complaint()
+
+    elif call.data in {"approve", "reject"}:
         if call.data == "approve":
             decision = VoteDecision.APPROVE
         else:
@@ -163,7 +181,6 @@ async def callback_query_handler(
 
         else:
             await complaint_manager.ensure_votes()
-            now = datetime.now(TIMEZONE)
             complaint.resolved_by = user_model.user_id
             complaint.resolved_at = now
             if decision == VoteDecision.APPROVE:
@@ -174,5 +191,17 @@ async def callback_query_handler(
             await uow.complaint.upsert(complaint)
             complaint_manager.complaint = complaint
 
+            report = AddReportPayload(
+                bag_id=complaint.bag_id,
+                reason=complaint.reason,
+                comment=complaint.problem,
+                sender=user_model.sender,
+            )
+            await ctx.mytonstorage.reports.add(report)
+
         await complaint_manager.update_complaint()
+
+    elif call.data == "back":
+        await complaint_manager.update_complaint()
+
     await call.answer()

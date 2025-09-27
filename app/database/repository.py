@@ -3,16 +3,7 @@ from __future__ import annotations
 import typing as t
 from typing import TypeVar
 
-from sqlalchemy import (
-    delete,
-    exists,
-    func,
-    select,
-    update,
-    Delete,
-    Select,
-    Update,
-)
+from sqlalchemy import delete, exists, func, select, update, Delete, Select, Update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import BaseModel

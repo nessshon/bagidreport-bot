@@ -14,11 +14,7 @@ from sqlalchemy import (
     BigInteger,
     UniqueConstraint,
 )
-from sqlalchemy.orm import (
-    Mapped,
-    mapped_column,
-    relationship,
-)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ._base import BaseModel
 from ..enums import ComplaintStatus
@@ -51,16 +47,24 @@ class ComplaintModel(BaseModel):
     message_id: Mapped[t.Optional[int]] = mapped_column(BigInteger)
 
     bag_id: Mapped[str] = mapped_column(String(64), index=True)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
     problem: Mapped[str] = mapped_column(Text, nullable=False)
 
     resolved_by: Mapped[t.Optional[int]] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
-    resolved_at: Mapped[t.Optional[datetime]] = mapped_column(DateTime)
+    resolved_at: Mapped[t.Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+    )
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    updated_at: Mapped[t.Optional[datetime]] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: Mapped[t.Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+    )
 
     user: Mapped["UserModel"] = relationship(
         "UserModel",

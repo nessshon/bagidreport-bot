@@ -17,6 +17,23 @@ def create_button(localizer: Localizer, code: str) -> InlineKeyboardMarkup:
     )
 
 
+def select_reason(localizer: Localizer) -> InlineKeyboardMarkup:
+    reason_map = localizer("reason")
+    inline_keyboard = [
+        [
+            InlineKeyboardButton(
+                text=val,
+                callback_data=key,
+            )
+        ]
+        for key, val in reason_map.items()  # type: ignore
+    ]
+    inline_keyboard.append(
+        [InlineKeyboardButton(text=localizer("buttons.back"), callback_data="back")]
+    )
+    return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+
+
 def select_language(localizer: Localizer) -> InlineKeyboardMarkup:
     inline_keyboard = []
     for locale in SUPPORTED_LOCALES:

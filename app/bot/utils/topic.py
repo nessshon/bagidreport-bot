@@ -261,6 +261,12 @@ class ComplaintManager:
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
+                        text=f"Причина: {self.localizer(f'reason.{self.complaint.reason}')}",
+                        callback_data="change_reason",
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
                         text=self.localizer("buttons.reject"), callback_data="reject"
                     ),
                     InlineKeyboardButton(
@@ -277,6 +283,7 @@ class ComplaintManager:
                 complaint_id=self.complaint.id,
                 bag_id=self.complaint.bag_id.upper(),
                 problem=markdown.hitalic(self.complaint.problem),
+                reason=self.localizer(f"reason.{self.complaint.reason}"),
             )
         ]
 

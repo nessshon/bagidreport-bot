@@ -14,11 +14,7 @@ from sqlalchemy import (
     ForeignKey,
     UniqueConstraint,
 )
-from sqlalchemy.orm import (
-    Mapped,
-    mapped_column,
-    relationship,
-)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ._base import BaseModel
 
@@ -50,7 +46,10 @@ class UserModel(BaseModel):
     language_code: Mapped[t.Optional[str]] = mapped_column(String(8))
 
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
 
     topic: Mapped["UserTopicModel"] = relationship(
         "UserTopicModel",
@@ -81,6 +80,12 @@ class UserModel(BaseModel):
         link = create_tg_link("user", id=self.user_id)
         return hlink(title=self.full_name, url=link)
 
+    @property
+    def sender(self) -> str:
+        if self.username is not None:
+            return f"{self.username}.t.me"
+        return f"tg.{self.full_name}"
+
 
 class UserTopicModel(BaseModel):
     __tablename__ = "users.topics"
@@ -95,7 +100,10 @@ class UserTopicModel(BaseModel):
         index=True,
     )
     message_thread_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
 
     user: Mapped[UserModel] = relationship(back_populates="topic")
 

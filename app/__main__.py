@@ -8,17 +8,13 @@ from aiogram.fsm.storage.base import DefaultKeyBuilder
 from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio import Redis
 
-from .bot import (
-    commands,
-    middlewares,
-    handlers,
-    Broadcaster,
-)
+from .api.mytonstorage import MytonstorageClient
+from .bot import commands, middlewares, handlers, Broadcaster
 from .bot.utils.i18n import I18N
 from .config import BOT_TOKEN, REDIS_URL
-from .config import setup_logging
 from .context import Context, set_context
 from .database import Database
+from .logging import setup_logging
 
 setup_logging()
 logger = logging.getLogger("app.main")
@@ -68,6 +64,7 @@ async def main() -> None:
     ctx.bot = Bot(BOT_TOKEN, default=properties)
     ctx.dp = Dispatcher(storage=storage, ctx=ctx)
 
+    ctx.mytonstorage = MytonstorageClient()
     ctx.broadcaster = Broadcaster(ctx.bot)
     ctx.i18n = I18N()
 

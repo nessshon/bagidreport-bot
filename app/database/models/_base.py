@@ -3,10 +3,7 @@ from __future__ import annotations
 import json
 import typing as t
 
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    InstrumentedAttribute,
-)
+from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute
 
 _T = t.TypeVar("_T", bound="BaseModel")
 

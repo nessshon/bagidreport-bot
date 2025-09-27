@@ -44,6 +44,9 @@ messages:
   input_captcha: |
     🔐 <b>Enter the captcha.</b>
 
+  select_reason: |
+    ❓ <b>Select the reason for the complaint:</b>
+
   complaint_sent: |
     ✅ <b>Report submitted!</b>
 
@@ -93,9 +96,22 @@ errors:
     
     Please try again.
 
+reason:
+  spam: "Spam"
+  scam: "Scam"
+  malware: "Malware"
+  abuse: "Abuse"
+  copyright: "Copyright"
+  child_abuse: "Child abuse"
+  inappropriate: "Inappropriate"
+  illegal_content: "Illegal"
+  privacy_violation: "Data leak"
+  other: "Other"
+
 buttons:
   to_main: "‹ Home"
   cancel: "× Cancel"
+  back: "‹ Back"
 
   lang:
     ru: "Russian"

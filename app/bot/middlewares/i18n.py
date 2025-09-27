@@ -8,10 +8,7 @@ from aiogram.enums import ChatType
 from aiogram.types import TelegramObject, User, Chat
 
 from ..utils.i18n import Localizer
-from ...config import (
-    DEFAULT_LOCALE,
-    SUPPORTED_LOCALES,
-)
+from ...config import DEFAULT_LOCALE, SUPPORTED_LOCALES
 from ...context import Context
 from ...database.models import UserModel
 
