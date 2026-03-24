@@ -7,7 +7,7 @@ messages:
     <b>Username:</b> {username}
 
     <b>Имя:</b> {full_name}
-    <b>Код языка:</b> {language_code}
+    <b>Язык:</b> {language_code}
 
     <b>Состояние:</b> {state}
     <b>Заблокирован:</b> {is_banned}
@@ -21,7 +21,7 @@ messages:
     🟢 <b>{user_mention} разблокирован!</b>
 
   complaint_alert: |
-    📋 <b>Обращение #Complaint{complaint_id}</b>
+    📋 <b>Обращение #{report_id}</b>
 
     <b><a href="https://mytonstorage.org/api/v1/gateway/{bag_id}">Bag ID</a>:</b> <code>{bag_id}</code>
 
@@ -40,16 +40,16 @@ messages:
     ⚠️ <b>Обращение на рассмотрении</b>
 
   complaint_status_rejected: |
-    🚫 <b>Обращение отклонено:</b> {resolved_by}
+    🚫 <b>Обращение отклонено:</b> {resolved_by} ({resolved_at})
 
   complaint_status_approved: |
-    🔰 <b>Обращение одобрено:</b> {resolved_by}
+    🔰 <b>Обращение одобрено:</b> {resolved_by} ({resolved_at})
 
   complaint_waiting: |
     ⏳ <b>Ожидается финальное решение:</b> {admins}
 
   change_reason: |
-    📋 <b>Обращение #Complaint{complaint_id}</b>
+    📋 <b>Обращение #{report_id}</b>
 
     <b><a href="https://mytonstorage.org/api/v1/gateway/{bag_id}">Bag ID</a>:</b> <code>{bag_id}</code>
 
@@ -61,21 +61,21 @@ messages:
     ❓ <b>Выберите причину жалобы:</b>
 
   throttled: |
-    Слишком часто. Подождите {ttl} сек.
+    Слишком часто. Подождите немного.
 
   throttled_message: |
-    Обработано другим пользователем. Повторите через {ttl} сек.
+    Обработано другим пользователем. Повторите через несколько секунд.
 
 reason:
   spam: "Спам"
   scam: "Скам"
   malware: "Вирусы"
-  abuse: "Оскорбления"
+  abuse: "Оскорбления и травля"
   copyright: "Авторские права"
   child_abuse: "Эксплуатация детей"
-  inappropriate: "Неприемлемое"
-  illegal_content: "Запрещённое"
-  privacy_violation: "Утечка данных"
+  inappropriate: "Неприемлемый контент"
+  illegal_content: "Запрещённый контент"
+  privacy_violation: "Нарушение приватности"
   other: "Прочее"
 
 buttons:

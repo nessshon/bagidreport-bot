@@ -1,40 +1,40 @@
 messages:
 
   main: |
-    🤖 This bot accepts reports about Bag ID issues in TON Storage.
-    
-    <b>Please send your message in the exact format:</b>
+    🤖 Here you can report content by Bag ID in TON Storage.
+
+    <b>Send your message in the following format:</b>
     <code>&lt;Bag ID - 64 hex characters&gt;
     &lt;problem description - up to 2048 characters&gt;</code>
 
     <b>Example:</b>
     <code>789BF4014D7566F5BFA9173B89009C9CA7C705D238598A509AF440BB60DA2EBE
-    Animal abuse report</code>
+    Distribution of malware, file contains a trojan</code>
 
   help: |
     ℹ️ <b>Help</b>
-    
-    <b>What the bot does:</b>
-    It accepts reports about Bag ID issues in TON Storage and sends them for moderation.
-    
-    <b>How to send a report:</b>
+
+    <b>What this does:</b>
+    Here you can report content by Bag ID in TON Storage. Reports are forwarded for moderation.
+
+    <b>How to submit a report:</b>
     Your message must contain two lines:
     <code>&lt;Bag ID - 64 hex characters&gt;
     &lt;problem description - up to 2048 characters&gt;</code>
-    
+
     <b>Example:</b>
     <code>789BF4014D7566F5BFA9173B89009C9CA7C705D238598A509AF440BB60DA2EBE
-    Animal abuse report</code>
+    Distribution of malware, file contains a trojan</code>
 
     <b>Commands:</b>
-    /start - launch the bot  
-    /help - open this help  
+    /start - launch the bot
+    /help - open this help
     /lang - change interface language
-    
+
     <b>Tips:</b>
-    • Describe the issue clearly and in detail – this speeds up review.  
+    • Describe the issue clearly and in detail – this speeds up review.
     • If you made a mistake, send a new message in the correct format.
-    
+
     <b>Privacy:</b>
     Your Bag ID and report text are visible to moderators for review.
 
@@ -42,7 +42,7 @@ messages:
     🌐 <b>Select a language.</b>
 
   input_captcha: |
-    🔐 <b>Enter the captcha.</b>
+    🔐 <b>Enter the characters from the image.</b>
 
   select_reason: |
     ❓ <b>Select the reason for the complaint:</b>
@@ -50,34 +50,34 @@ messages:
   complaint_sent: |
     ✅ <b>Report submitted!</b>
 
-    <b>ID:</b> <code>{complaint_id}</code>
+    <b>ID:</b> <code>{report_id}</code>
     <b>Bag ID:</b> <code>{complaint_bag_id}</code>
 
     Your report has been forwarded for moderation.
 
   throttled: |
-    Too many requests. Please wait {ttl} sec.
+    Too many requests. Please wait a moment.
 
 errors:
 
   invalid_format: |
     <blockquote><b>Invalid message format.</b>
-    
+
     Please send your message in the exact format shown above.</blockquote>
 
   bag_id_invalid: |
     <blockquote><b>Invalid Bag ID.</b>
-    
+
     Must be exactly 64 hexadecimal characters, without the <code>0x</code> prefix.</blockquote>
 
   problem_required: |
     <blockquote><b>Please describe the problem in more detail.</b>
-    
-    The description cannot be empty and must contain at least a few words.</blockquote>
+
+    The description cannot be empty and must contain at least 3 words.</blockquote>
 
   problem_too_long: |
     <blockquote><b>Description is too long.</b>
-    
+
     Maximum length is 2048 characters.</blockquote>
 
   non_text: |
@@ -87,25 +87,25 @@ errors:
     <blockquote><b>Incorrect captcha.</b></blockquote>
 
   captcha_expired: |
-    <blockquote><b>Captcha input time has expired.</b>
-    
+    <blockquote><b>Captcha has expired.</b>
+
     Please try again.</blockquote>
 
   unknown: |
     <b>❗ An unexpected error occurred.</b>
-    
+
     Please try again.
 
 reason:
   spam: "Spam"
   scam: "Scam"
   malware: "Malware"
-  abuse: "Abuse"
+  abuse: "Abuse & harassment"
   copyright: "Copyright"
   child_abuse: "Child abuse"
-  inappropriate: "Inappropriate"
-  illegal_content: "Illegal"
-  privacy_violation: "Data leak"
+  inappropriate: "Inappropriate content"
+  illegal_content: "Illegal content"
+  privacy_violation: "Privacy violation"
   other: "Other"
 
 buttons:
