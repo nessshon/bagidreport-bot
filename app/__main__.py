@@ -41,6 +41,7 @@ async def on_shutdown(ctx: Context) -> None:
     with suppress(TelegramRetryAfter):
         await commands.delete(ctx)
     await ctx.bot.session.close()
+    await ctx.redis.aclose()
     await ctx.db.shutdown()
     await ctx.mytonstorage.close()
 

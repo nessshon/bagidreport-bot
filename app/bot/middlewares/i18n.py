@@ -28,9 +28,9 @@ class I18nMiddleware(BaseMiddleware):
         chat: t.Optional[Chat] = data.get("event_chat")
         ctx: Context = data.get("ctx")
 
-        if user is not None and not user.is_bot:
+        if user is not None and not user.is_bot and chat is not None:
             if chat.type == ChatType.PRIVATE:
-                user_model: UserModel = data.get("user_model")
+                user_model: t.Optional[UserModel] = data.get("user_model")
                 language_code = self._get_user_language_code(user, user_model)
             elif chat.type in {ChatType.GROUP, ChatType.SUPERGROUP}:
                 language_code = "group"
@@ -49,8 +49,8 @@ class I18nMiddleware(BaseMiddleware):
         return await handler(event, data)
 
     @staticmethod
-    def _get_user_language_code(user: User, user_model: UserModel) -> str:
-        if user_model.language_code in SUPPORTED_LOCALES:
+    def _get_user_language_code(user: User, user_model: t.Optional[UserModel]) -> str:
+        if user_model is not None and user_model.language_code in SUPPORTED_LOCALES:
             language_code = user_model.language_code
         elif user.language_code in SUPPORTED_LOCALES:
             language_code = user.language_code

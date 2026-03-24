@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime
 
@@ -207,7 +208,18 @@ async def callback_query_handler(
                     comment=complaint.problem,
                     sender=user_model.sender,
                 )
-                await ctx.mytonstorage.reports.add(report)
+                for attempt in range(1, 4):
+                    try:
+                        await ctx.mytonstorage.reports.add(report)
+                        break
+                    except Exception as e:
+                        logger.warning(
+                            "MyTonStorage API attempt %d/3 failed: %s", attempt, e,
+                        )
+                        if attempt == 3:
+                            logger.exception("Failed to send report to MyTonStorage")
+                        else:
+                            await asyncio.sleep(attempt)
 
         await complaint_manager.update_complaint()
 
