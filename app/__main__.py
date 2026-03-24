@@ -24,6 +24,7 @@ async def on_startup(ctx: Context) -> None:
     logger.info("App startup initiated...")
 
     await ctx.db.start()
+    await ctx.mytonstorage.ensure_session()
 
     middlewares.register(ctx.dp)
     handlers.register(ctx.dp)
@@ -41,6 +42,7 @@ async def on_shutdown(ctx: Context) -> None:
         await commands.delete(ctx)
     await ctx.bot.session.close()
     await ctx.db.shutdown()
+    await ctx.mytonstorage.close()
 
     logger.info("App shutdown complete")
 
