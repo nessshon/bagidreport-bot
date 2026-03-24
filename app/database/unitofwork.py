@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import typing as t
 
 from aiogram.enums import ChatMemberStatus
-from sqlalchemy import select, func
+from sqlalchemy import select, func, case
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import joinedload
 
@@ -44,13 +44,10 @@ class UnitOfWork:
     ) -> None:
         if exc_type:
             await self.rollback()
+            logger.error(f"Unit of work error: {exc}")
         else:
             await self.commit()
         await self.session.close()
-
-        if exc:
-            logger.error(f"Unit of work error: {exc}")
-            raise exc.with_traceback(tb)
 
     async def commit(self) -> None:
         await self.session.commit()
@@ -59,29 +56,43 @@ class UnitOfWork:
         await self.session.rollback()
 
     async def get_stats_summary(self) -> dict[str, t.Any]:
-        stmt_users_total = select(func.count()).select_from(UserModel)
-        stmt_users_active = (
-            select(func.count())
-            .select_from(UserModel)
-            .where(UserModel.state == ChatMemberStatus.MEMBER)
-        )
-        (
-            users_total_res,
-            users_active_res,
-        ) = await asyncio.gather(
-            self.session.execute(stmt_users_total),
-            self.session.execute(stmt_users_active),
-        )
+        stmt = select(
+            func.count().label("total"),
+            func.count(
+                case(
+                    (UserModel.state == ChatMemberStatus.MEMBER, 1),
+                )
+            ).label("active"),
+        ).select_from(UserModel)
 
-        users_total = int(users_total_res.scalar() or 0)
-        users_active = int(users_active_res.scalar() or 0)
-        users_inactive = max(users_total - users_active, 0)
+        result = await self.session.execute(stmt)
+        row = result.one()
+
+        users_total = int(row.total or 0)
+        users_active = int(row.active or 0)
 
         return {
             "users_total": users_total,
             "users_active": users_active,
-            "users_inactive": users_inactive,
+            "users_inactive": max(users_total - users_active, 0),
         }
+
+    async def create_complaint(self, complaint: ComplaintModel, max_retries: int = 3) -> ComplaintModel:
+        from .models.complaint import generate_public_id
+
+        for attempt in range(max_retries):
+            nested = await self.session.begin_nested()
+            try:
+                self.session.add(complaint)
+                await nested.commit()
+                return complaint
+            except IntegrityError:
+                await nested.rollback()
+                if attempt < max_retries - 1:
+                    await self.session.expire_all()
+                    complaint.public_id = generate_public_id()
+                    continue
+                raise
 
     async def get_complaint_by_message_id(
         self,

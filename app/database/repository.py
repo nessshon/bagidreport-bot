@@ -30,18 +30,9 @@ class BaseRepository(t.Generic[_TModel]):
         return stmt
 
     async def upsert(self, model: _TModel) -> _TModel:
-        pk_columns = self.model.__mapper__.primary_key
-        pk_filter = {col.key: getattr(model, col.key) for col in pk_columns}
-
-        existing = await self.get(**pk_filter)
-        if existing:
-            for field in model.__table__.columns.keys():
-                if field not in pk_filter:
-                    setattr(existing, field, getattr(model, field))
-            await self.session.flush()
-            return existing
-
-        return await self.create(model)
+        merged = await self.session.merge(model)
+        await self.session.flush()
+        return merged
 
     async def create(self, model: _TModel) -> _TModel:
         self.session.add(model)

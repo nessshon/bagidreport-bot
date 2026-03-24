@@ -35,22 +35,24 @@ def upgrade() -> None:
     op.create_index(op.f('ix_users_user_id'), 'users', ['user_id'], unique=True)
     op.create_table('complaints',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('public_id', sa.String(length=10), nullable=False),
     sa.Column('status', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.BigInteger(), nullable=False),
     sa.Column('message_thread_id', sa.BigInteger(), nullable=False),
     sa.Column('message_id', sa.BigInteger(), nullable=True),
     sa.Column('bag_id', sa.String(length=64), nullable=False),
     sa.Column('reason', sa.Text(), nullable=False),
     sa.Column('problem', sa.Text(), nullable=False),
-    sa.Column('resolved_by', sa.Integer(), nullable=True),
+    sa.Column('resolved_by', sa.BigInteger(), nullable=True),
     sa.Column('resolved_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.CheckConstraint('status IN (0,1,2)', name='ck_complaint_status_int'),
-    sa.ForeignKeyConstraint(['resolved_by'], ['users.id'], ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['resolved_by'], ['users.user_id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.user_id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('message_id', name='ux_complaints_message_id')
+    sa.UniqueConstraint('message_id', name='ux_complaints_message_id'),
+    sa.UniqueConstraint('public_id', name='ux_complaints_public_id')
     )
     op.create_index(op.f('ix_complaints_bag_id'), 'complaints', ['bag_id'], unique=False)
     op.create_index(op.f('ix_complaints_status'), 'complaints', ['status'], unique=False)

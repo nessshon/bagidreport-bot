@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import secrets
+import string
 import typing as t
 from datetime import datetime
 
@@ -23,6 +25,14 @@ if t.TYPE_CHECKING:
     from .user import UserModel
     from .vote import VoteModel
 
+_PUBLIC_ID_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+_PUBLIC_ID_LENGTH = 6
+
+
+def generate_public_id() -> str:
+    code = "".join(secrets.choice(_PUBLIC_ID_ALPHABET) for _ in range(_PUBLIC_ID_LENGTH))
+    return f"RPT_{code}"
+
 
 class ComplaintModel(BaseModel):
     __tablename__ = "complaints"
@@ -31,6 +41,12 @@ class ComplaintModel(BaseModel):
         primary_key=True,
         autoincrement=True,
     )
+    public_id: Mapped[str] = mapped_column(
+        String(10),
+        unique=True,
+        nullable=False,
+        default=generate_public_id,
+    )
     status: Mapped[int] = mapped_column(
         Integer,
         default=ComplaintStatus.PENDING,
@@ -38,7 +54,8 @@ class ComplaintModel(BaseModel):
     )
 
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="RESTRICT"),
+        BigInteger,
+        ForeignKey("users.user_id", ondelete="RESTRICT"),
         index=True,
         nullable=False,
     )
@@ -51,7 +68,8 @@ class ComplaintModel(BaseModel):
     problem: Mapped[str] = mapped_column(Text, nullable=False)
 
     resolved_by: Mapped[t.Optional[int]] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL"),
+        BigInteger,
+        ForeignKey("users.user_id", ondelete="SET NULL"),
         nullable=True,
     )
     resolved_at: Mapped[t.Optional[datetime]] = mapped_column(
