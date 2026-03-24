@@ -1,13 +1,14 @@
 import logging
 import time
 import typing as t
+from contextlib import suppress
 from datetime import datetime
 
 from aiogram import Router, F, flags
 from aiogram.enums import ChatType, ContentType
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import ChatMemberUpdated, Message, CallbackQuery
+from aiogram.types import ChatMemberUpdated, Message, CallbackQuery, InaccessibleMessage
 
 from ..filters import IsBannedFilter
 from ..utils import keyboards
@@ -28,6 +29,16 @@ from ...database.models import UserModel, ComplaintModel
 
 logger = logging.getLogger(__name__)
 router = Router()
+
+async def _reset_to_main(call: CallbackQuery, state: FSMContext, localizer: Localizer) -> None:
+    chat_id = call.from_user.id
+    with suppress(Exception):
+        await call.bot.delete_message(chat_id=chat_id, message_id=call.message.message_id)
+    msg = await call.bot.send_message(chat_id=chat_id, text=localizer("messages.main"))
+    await save_last_message_id(state, msg.message_id)
+    await state.set_state(UserState.MAIN)
+    await call.answer()
+
 
 filters = [F.chat.type.in_({ChatType.PRIVATE}), IsBannedFilter()]
 router.message.filter(*filters)
@@ -86,7 +97,7 @@ async def input_captcha_window(
         caption += "\n" + localizer(f"errors.{error_code}")
     image, captcha_solution = await generate_captcha()
     reply_markup = keyboards.create_button(localizer, "back")
-    msg = await message.answer_photo(image, caption, reply_markup=reply_markup)
+    msg = await message.answer_photo(image, caption=caption, reply_markup=reply_markup)
     await delete_last_message_id(message.bot, state, message.chat.id)
     await save_last_message_id(state, msg.message_id)
 
@@ -107,7 +118,7 @@ async def complaint_sent_window(
     text = (
         localizer(
             "messages.complaint_sent",
-            complaint_id=state_data.get("complaint_id"),
+            report_id=state_data.get("report_id"),
             complaint_bag_id=state_data.get("complaint_bag_id"),
         )
         if not error
@@ -196,8 +207,7 @@ async def captcha_message_handler(
                 problem=state_data.get("problem"),
                 created_at=datetime.now(TIMEZONE),
             )
-            uow.session.add(complaint)
-            await uow.session.flush()
+            complaint = await uow.create_complaint(complaint)
 
             complaint_manager = ComplaintManager(ctx, uow, complaint)
             message_id = await complaint_manager.send_complaint()
@@ -205,7 +215,7 @@ async def captcha_message_handler(
             await uow.complaint.upsert(complaint)
 
             await state.update_data(
-                complaint_id=complaint.id,
+                report_id=complaint.public_id,
                 complaint_bag_id=complaint.bag_id,
             )
             await complaint_sent_window(message, state, localizer)
@@ -250,10 +260,13 @@ async def select_reason_callback_query_handler(
     state: FSMContext,
     localizer: Localizer,
 ) -> None:
+    if isinstance(call.message, InaccessibleMessage):
+        await _reset_to_main(call, state, localizer)
+        return
     reason_map: dict = localizer("reason")  # type: ignore
     if call.data == "back":
         await main_window(call.message, state, localizer)
-    if call.data in reason_map.keys():
+    elif call.data in reason_map.keys():
         await state.update_data(reason=call.data)
         await input_captcha_window(call.message, state, localizer)
     await call.answer()
@@ -265,6 +278,9 @@ async def captcha_callback_query_handler(
     state: FSMContext,
     localizer: Localizer,
 ) -> None:
+    if isinstance(call.message, InaccessibleMessage):
+        await _reset_to_main(call, state, localizer)
+        return
     if call.data == "back":
         await select_reason(call.message, state, localizer)
     await call.answer()
@@ -279,6 +295,9 @@ async def callback_query_handler(
     user_model: UserModel,
     ctx: Context,
 ) -> None:
+    if isinstance(call.message, InaccessibleMessage):
+        await call.answer(localizer("errors.message_expired"), show_alert=True)
+        return
     if call.data.startswith("selected_lang"):
         language_code = call.data.split(":")[1]
         user_model.language_code = language_code

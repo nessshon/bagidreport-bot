@@ -191,18 +191,10 @@ class TopicManager:
                 return msg.message_id
 
             except TelegramRetryAfter as e:
-                await asyncio.sleep(float(e.retry_after))
-                msg = await self.bot.send_message(
-                    chat_id=self.group_id,
-                    text=text,
-                    reply_markup=reply_markup,
-                    parse_mode=parse_mode,
-                    disable_notification=disable_notification,
-                    disable_web_page_preview=disable_web_page_preview,
-                    reply_to_message_id=reply_to_message_id,
-                    message_thread_id=self.topic_id,
-                )
-                return msg.message_id
+                if attempt < 2:
+                    await asyncio.sleep(float(e.retry_after))
+                    continue
+                raise
 
             except TelegramBadRequest as e:
                 if _is_thread_missing(e) and attempt == 1:
@@ -280,7 +272,7 @@ class ComplaintManager:
         parts: t.List[str] = [
             self.localizer(
                 "messages.complaint_alert",
-                complaint_id=self.complaint.id,
+                report_id=self.complaint.public_id,
                 bag_id=self.complaint.bag_id.upper(),
                 problem=markdown.hitalic(self.complaint.problem),
                 reason=self.localizer(f"reason.{self.complaint.reason}"),
@@ -386,4 +378,6 @@ class ComplaintManager:
 
     async def _format_resolved_by(self, resolve_by: int) -> str:
         resolved_by = await self.uow.user.get(user_id=resolve_by)
+        if resolved_by is None:
+            return "—"
         return resolved_by.mention

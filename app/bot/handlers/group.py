@@ -49,8 +49,10 @@ async def info_command(
     localizer: Localizer,
 ) -> None:
     user_topic = await uow.user_topic.get(message_thread_id=message.message_thread_id)
+    if user_topic is None:
+        return
     user = await uow.user.get(user_id=user_topic.user_id)
-    if user_topic is None or user is None:
+    if user is None:
         return
 
     text = localizer(
@@ -74,8 +76,10 @@ async def ban_unban_command(
     localizer: Localizer,
 ) -> None:
     user_topic = await uow.user_topic.get(message_thread_id=message.message_thread_id)
+    if user_topic is None:
+        return
     user = await uow.user.get(user_id=user_topic.user_id)
-    if user_topic is None or user is None:
+    if user is None:
         return
 
     text = localizer(
@@ -153,13 +157,18 @@ async def callback_query_handler(
     if call.data == "change_reason":
         text = localizer(
             "messages.change_reason",
-            complaint_id=complaint.id,
+            report_id=complaint.public_id,
             bag_id=complaint.bag_id,
-            reason=complaint.reason,
+            reason=localizer(f"reason.{complaint.reason}"),
             problem=complaint.problem,
         )
         reply_markup = keyboards.select_reason(localizer)
-        await call.message.edit_text(text, reply_markup=reply_markup)
+        await ctx.bot.edit_message_text(
+            text=text,
+            chat_id=GROUP_ID,
+            message_id=message_id,
+            reply_markup=reply_markup,
+        )
 
     elif call.data in reason_map.keys():
         complaint.reason = call.data
@@ -191,13 +200,14 @@ async def callback_query_handler(
             await uow.complaint.upsert(complaint)
             complaint_manager.complaint = complaint
 
-            report = AddReportPayload(
-                bag_id=complaint.bag_id,
-                reason=complaint.reason,
-                comment=complaint.problem,
-                sender=user_model.sender,
-            )
-            await ctx.mytonstorage.reports.add(report)
+            if decision == VoteDecision.APPROVE:
+                report = AddReportPayload(
+                    bag_id=complaint.bag_id,
+                    reason=complaint.reason,
+                    comment=complaint.problem,
+                    sender=user_model.sender,
+                )
+                await ctx.mytonstorage.reports.add(report)
 
         await complaint_manager.update_complaint()
 
