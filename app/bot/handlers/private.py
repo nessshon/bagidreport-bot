@@ -124,11 +124,9 @@ async def complaint_sent_window(
         if not error
         else localizer("errors.unknown")
     )
-    reply_markup = keyboards.create_button(localizer, "to_main")
-    msg = await message.answer(text, reply_markup=reply_markup)
     await delete_last_message_id(message.bot, state, message.chat.id)
-    await save_last_message_id(state, msg.message_id)
-    await state.set_state(UserState.MAIN)
+    await message.answer(text)
+    await main_window(message, state, localizer)
 
 
 @router.message(Command("start"))
