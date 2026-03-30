@@ -5,7 +5,7 @@ messages:
 
     <b>Send your message in the following format:</b>
     <code>&lt;Bag ID - 64 hex characters&gt;
-    &lt;problem description - up to 2048 characters&gt;</code>
+    &lt;problem description&gt;</code>
 
     <b>Example:</b>
     <code>789BF4014D7566F5BFA9173B89009C9CA7C705D238598A509AF440BB60DA2EBE
@@ -20,7 +20,7 @@ messages:
     <b>How to submit a report:</b>
     Your message must contain two lines:
     <code>&lt;Bag ID - 64 hex characters&gt;
-    &lt;problem description - up to 2048 characters&gt;</code>
+    &lt;problem description&gt;</code>
 
     <b>Example:</b>
     <code>789BF4014D7566F5BFA9173B89009C9CA7C705D238598A509AF440BB60DA2EBE
@@ -47,11 +47,10 @@ messages:
   select_reason: |
     ❓ <b>Select the reason for the complaint:</b>
 
-  complaint_sent: |
+  report_sent: |
     ✅ <b>Report submitted!</b>
 
-    <b>ID:</b> <code>{report_id}</code>
-    <b>Bag ID:</b> <code>{complaint_bag_id}</code>
+    <b>Bag ID:</b> <code>{report_bag_id}</code>
 
     Your report has been forwarded for moderation.
 
@@ -61,40 +60,56 @@ messages:
 errors:
 
   invalid_format: |
-    <blockquote><b>Invalid message format.</b>
+    <blockquote>⚠️ <b>Invalid message format.</b>
 
     Please send your message in the exact format shown above.</blockquote>
 
   bag_id_invalid: |
-    <blockquote><b>Invalid Bag ID.</b>
+    <blockquote>⚠️ <b>Invalid Bag ID.</b>
 
     Must be exactly 64 hexadecimal characters, without the <code>0x</code> prefix.</blockquote>
 
   problem_required: |
-    <blockquote><b>Please describe the problem in more detail.</b>
+    <blockquote>⚠️ <b>Please describe the problem in more detail.</b>
 
     The description cannot be empty and must contain at least 3 words.</blockquote>
 
   problem_too_long: |
-    <blockquote><b>Description is too long.</b>
+    <blockquote>⚠️ <b>Description is too long.</b>
 
-    Maximum length is 2048 characters.</blockquote>
+    Maximum length is 1024 characters.</blockquote>
 
   non_text: |
-    <blockquote><b>Only text messages are accepted.</b></blockquote>
+    <blockquote>⚠️ <b>Unsupported message type.</b>
+
+    Only text messages are accepted.</blockquote>
 
   captcha_wrong: |
-    <blockquote><b>Incorrect captcha.</b></blockquote>
-
-  captcha_expired: |
-    <blockquote><b>Captcha has expired.</b>
+    <blockquote>⚠️ <b>Incorrect captcha.</b>
 
     Please try again.</blockquote>
 
-  unknown: |
-    <b>❗ An unexpected error occurred.</b>
+  captcha_expired: |
+    <blockquote>⚠️ <b>Captcha has expired.</b>
 
-    Please try again.
+    Please try again.</blockquote>
+
+  message_expired: "⚠️ Message has expired. Please send a new request."
+
+  unknown: |
+    <blockquote>⚠️ <b>An unexpected error occurred.</b>
+
+    Please try again.</blockquote>
+
+  bag_already_banned: |
+    <blockquote>⚠️ <b>This Bag ID is already banned.</b>
+
+    No further action is needed.</blockquote>
+
+  api_unavailable: |
+    <blockquote>⚠️ <b>Service temporarily unavailable.</b>
+
+    Please try again later.</blockquote>
 
 reason:
   spam: "Spam"
@@ -109,8 +124,6 @@ reason:
   other: "Other"
 
 buttons:
-  to_main: "‹ Home"
-  cancel: "× Cancel"
   back: "‹ Back"
 
   lang:

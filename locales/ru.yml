@@ -5,7 +5,7 @@ messages:
 
     <b>Отправьте сообщение строго в формате:</b>
     <code>&lt;Bag ID - 64 hex-символов&gt;
-    &lt;описание проблемы - до 2048 символов&gt;</code>
+    &lt;описание проблемы&gt;</code>
 
     <b>Пример:</b>
     <code>789BF4014D7566F5BFA9173B89009C9CA7C705D238598A509AF440BB60DA2EBE
@@ -20,7 +20,7 @@ messages:
     <b>Как отправить обращение:</b>
     Сообщение должно содержать две строки:
     <code>&lt;Bag ID - 64 hex-символов&gt;
-    &lt;описание проблемы - до 2048 символов&gt;</code>
+    &lt;описание проблемы&gt;</code>
 
     <b>Пример:</b>
     <code>789BF4014D7566F5BFA9173B89009C9CA7C705D238598A509AF440BB60DA2EBE
@@ -47,11 +47,10 @@ messages:
   select_reason: |
     ❓ <b>Выберите причину жалобы:</b>
 
-  complaint_sent: |
+  report_sent: |
     ✅ <b>Обращение отправлено!</b>
 
-    <b>ID:</b> <code>{report_id}</code>
-    <b>Bag ID:</b> <code>{complaint_bag_id}</code>
+    <b>Bag ID:</b> <code>{report_bag_id}</code>
 
     Ваше обращение передано на модерацию.
 
@@ -61,42 +60,56 @@ messages:
 errors:
 
   invalid_format: |
-    <blockquote><b>Неверный формат сообщения.</b>
-    
+    <blockquote>⚠️ <b>Неверный формат сообщения.</b>
+
     Отправьте сообщение строго в формате, описанном выше.</blockquote>
 
   bag_id_invalid: |
-    <blockquote><b>Неверный Bag ID.</b>
-    
+    <blockquote>⚠️ <b>Неверный Bag ID.</b>
+
     Допускаются ровно 64 шестнадцатеричных символа, без префикса <code>0x</code>.</blockquote>
 
   problem_required: |
-    <blockquote><b>Опишите проблему подробнее.</b>
-    
+    <blockquote>⚠️ <b>Опишите проблему подробнее.</b>
+
     Описание не должно быть пустым и должно содержать минимум 3 слова.</blockquote>
 
   problem_too_long: |
-    <blockquote><b>Слишком длинное описание.</b>
-    
-    Максимальная длина - 2048 символов.</blockquote>
+    <blockquote>⚠️ <b>Слишком длинное описание.</b>
+
+    Максимальная длина - 1024 символа.</blockquote>
 
   non_text: |
-    <blockquote><b>Принимаются только текстовые сообщения.</b></blockquote>
+    <blockquote>⚠️ <b>Неподдерживаемый тип сообщения.</b>
+
+    Принимаются только текстовые сообщения.</blockquote>
 
   captcha_wrong: |
-    <blockquote><b>Капча введена неверно.</b></blockquote>
+    <blockquote>⚠️ <b>Капча введена неверно.</b>
 
-  captcha_expired: |
-    <blockquote><b>Время на ввод капчи истекло.</b>
-    
     Попробуйте ещё раз.</blockquote>
 
-  message_expired: "Сообщение устарело. Отправьте новый запрос."
+  captcha_expired: |
+    <blockquote>⚠️ <b>Время на ввод капчи истекло.</b>
+
+    Попробуйте ещё раз.</blockquote>
+
+  message_expired: "⚠️ Сообщение устарело. Отправьте новый запрос."
 
   unknown: |
-    <b>❗ Произошла непредвиденная ошибка.</b>
+    <blockquote>⚠️ <b>Произошла непредвиденная ошибка.</b>
 
-    Попробуйте ещё раз.
+    Попробуйте ещё раз.</blockquote>
+
+  bag_already_banned: |
+    <blockquote>⚠️ <b>Bag ID уже заблокирован.</b>
+
+    Повторная жалоба не требуется.</blockquote>
+
+  api_unavailable: |
+    <blockquote>⚠️ <b>Сервис временно недоступен.</b>
+
+    Попробуйте позже.</blockquote>
 
 reason:
   spam: "Спам"
@@ -111,8 +124,6 @@ reason:
   other: "Прочее"
 
 buttons:
-  to_main: "‹ На главную"
-  cancel: "× Отменить"
   back: "‹ Назад"
 
   lang:

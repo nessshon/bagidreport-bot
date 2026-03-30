@@ -1,0 +1,167 @@
+messages:
+
+  command_info: |
+    👤 <b>Пользователь</b>
+
+    <b>• Telegram ID</b>: <code>{user_id}</code>
+    <b>• Username</b>: {username}
+    <b>• Имя</b>: {full_name}
+    <b>• Язык</b>: <code>{language_code}</code>
+    <b>• Состояние</b>: <code>{state}</code>
+    <b>• Заблокирован</b>: <code>{is_banned}</code>
+    <b>• Дата регистрации</b>: <code>{created_at}</code>
+
+  command_ban: |
+    <b>{user_mention} заблокирован.</b>
+
+  command_unban: |
+    <b>{user_mention} разблокирован.</b>
+
+  report_waiting: |
+    <b>Ожидается финальное решение:</b> {admins}
+
+  throttled: |
+    Слишком часто. Подождите немного.
+
+  throttled_message: |
+    Обработано другим пользователем. Повторите через несколько секунд.
+
+  panel:
+    main: |
+      <b>Панель администратора</b>
+
+      {stats_table}
+
+    users:
+      title: |
+        <b>Управление пользователями</b>: {users_total}
+
+        {users_stats}
+      search: |
+        <b>Поиск пользователя</b>
+
+        Отправьте User ID в чат:
+      detail: |
+        <b>Пользователь</b>
+
+        <b>• Telegram ID</b>: <code>{user_id}</code>
+        <b>• Username</b>: {username}
+        <b>• Имя</b>: {full_name}
+        <b>• Язык</b>: <code>{language_code}</code>
+        <b>• Статус</b>: <code>{state}</code>
+        <b>• Заблокирован</b>: <code>{is_banned_text}</code>
+        <b>• Дата регистрации</b>: <code>{created_at}</code>
+
+    unban_bag: |
+      <b>Разблокировать Bag</b>
+
+      Отправьте Bag ID в чат:
+
+    unban_bag_detail: |
+      <b>Информация о блокировке</b>
+
+      <b>• Bag ID</b>: <code>{bag_id}</code>
+      <b>• Заблокирован</b>: <code>{ban_found_text}</code>
+      <b>• Причина</b>: {ban_reason}
+      <b>• Админ</b>: {ban_admin}
+      <b>• Комментарий</b>: {ban_comment}
+
+    create_ban: |
+      <b>Заблокировать Bag</b>
+
+      Отправьте Bag ID в чат:
+    create_ban_reason: "<b>Выберите причину блокировки</b>"
+    create_ban_comment: |
+      <b>Комментарий</b>
+
+      Отправьте комментарий или нажмите «Пропустить»:
+
+    errors:
+      invalid_user_id: |
+        <blockquote>⚠️ <b>Неверный User ID.</b>
+
+        Отправьте числовой Telegram ID.</blockquote>
+      user_not_found: |
+        <blockquote>⚠️ <b>Пользователь не найден.</b>
+
+        Проверьте ID и попробуйте снова.</blockquote>
+      invalid_bag_id: |
+        <blockquote>⚠️ <b>Неверный Bag ID.</b>
+
+        Допускаются ровно 64 шестнадцатеричных символа.</blockquote>
+      bag_already_banned: |
+        <blockquote>⚠️ <b>Bag ID уже заблокирован.</b>
+
+        Повторная блокировка не требуется.</blockquote>
+      api_unavailable: |
+        <blockquote>⚠️ <b>Сервис временно недоступен.</b>
+
+        Попробуйте позже.</blockquote>
+
+tabs:
+  users:
+    all: "Все"
+    banned: "Заблокированные"
+
+buttons:
+  back: "‹ Назад"
+  skip: "Пропустить ›"
+  close: "× Скрыть"
+  search: "⌕ Поиск"
+  manage_users: "Список пользователей"
+  unban_bag_menu: "Разблокировать Bag"
+  copy_user_id: "Скопировать User ID"
+  copy_bag_id: "Скопировать Bag ID"
+  open_mytonstorage: "Открыть Bag в обозревателе"
+  ban: "Заблокировать"
+  unban: "Разблокировать"
+  unban_bag: "Разблокировать"
+  create_ban: "Заблокировать Bag"
+
+commands:
+  group:
+    info:
+      description: "Информация пользователя"
+    ban:
+      description: "Заблокировать пользователя"
+    unban:
+      description: "Разблокировать пользователя"
+  private:
+    admin:
+      description: "Панель администратора"
+
+report:
+  title: "📋 <b>Обращение</b>"
+  label_bag_id: "<b>• Bag ID</b>:"
+  label_reason: "<b>• Причина</b>:"
+  label_problem: "<b>• Описание</b>:"
+  label_author: "<b>Отправитель</b>:"
+  label_approve: "Приняли:"
+  label_reject: "Отклонили:"
+  status_pending: "⚠️ На рассмотрении"
+  status_approved: "✅ Заблокировано:"
+  status_rejected: "❌ Отклонено:"
+  btn_reason: "Причина: {reason}"
+  btn_approve: "✓ Принять"
+  btn_reject: "× Отклонить"
+
+errors:
+  api: "Ошибка API [{status_code}]: {message}"
+  unknown: "Ошибка: {error}"
+  api_unavailable: "⚠️ Сервис временно недоступен. Попробуйте позже."
+
+common:
+  "yes": "Да"
+  "no": "Нет"
+  active: "Активные"
+  inactive: "Неактивные"
+  lang:
+    ru: "Русский"
+    en: "Английский"
+  state:
+    creator: "Создатель"
+    administrator: "Администратор"
+    member: "Активен"
+    restricted: "Ограничен"
+    left: "Покинул"
+    kicked: "Неактивен"

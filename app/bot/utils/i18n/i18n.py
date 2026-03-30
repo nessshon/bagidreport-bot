@@ -25,7 +25,7 @@ class I18N:
             )
 
         locales_data: t.Dict[str, t.Dict[str, t.Any]] = {}
-        for locale in SUPPORTED_LOCALES + ["group"]:
+        for locale in SUPPORTED_LOCALES + ["admin"]:
             try:
                 file_path = self._resolve_locale_file(locale)
                 raw_data = self._load_yaml_file(file_path)
@@ -35,6 +35,9 @@ class I18N:
             except Exception:
                 logger.error(f"Failed to load locale: '{locale}'")
                 raise
+
+        if "admin" in locales_data and "ru" in locales_data:
+            locales_data["admin"] = {**locales_data["ru"], **locales_data["admin"]}
 
         return locales_data
 

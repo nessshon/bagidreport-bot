@@ -33,7 +33,7 @@ class I18nMiddleware(BaseMiddleware):
                 user_model: t.Optional[UserModel] = data.get("user_model")
                 language_code = self._get_user_language_code(user, user_model)
             elif chat.type in {ChatType.GROUP, ChatType.SUPERGROUP}:
-                language_code = "group"
+                language_code = "admin"
             else:
                 return await handler(event, data)
 

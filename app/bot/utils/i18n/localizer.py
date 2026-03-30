@@ -21,7 +21,7 @@ class Localizer:
         self.locale_data = locale_data
 
     @classmethod
-    def _get_nested(
+    def get_nested(
         cls,
         data: t.Dict[str, t.Any],
         dotted_key: str,
@@ -40,7 +40,7 @@ class Localizer:
         if key in self.locale_data:
             return self.locale_data[key]
 
-        result = self._get_nested(self.locale_data, key, default)
+        result = self.get_nested(self.locale_data, key, default)
         if result is default:
             logger.info(f"Localization key not found: 'key={key}'")
         return result

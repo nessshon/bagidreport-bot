@@ -1,7 +1,8 @@
 aiogram==3.26.0
+aiogram_dialog==2.5.0
 aiosqlite==0.22.1
 alembic==1.18.4
-cachetools==6.2.0
+cachetools==5.5.2
 environs==14.6.0
 greenlet==3.3.2
 multicolorcaptcha==1.2.0
