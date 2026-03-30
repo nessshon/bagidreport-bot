@@ -4,7 +4,7 @@ import asyncio
 import typing as t
 
 if t.TYPE_CHECKING:
-    from .api.mytonstorage import MytonstorageClient
+    from .api import MytonstorageClient
 
 _CTX: t.Optional[Context] = None
 _STORAGE_KEY: str = "__context_storage__"

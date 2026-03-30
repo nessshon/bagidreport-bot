@@ -1,46 +1,88 @@
-import asyncio
 import logging
 from datetime import datetime
 
 from aiogram import Router, F
 from aiogram.enums import ChatType
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, CommandObject
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InaccessibleMessage
 from aiogram.utils.markdown import hcode
+from pyapiq.exceptions import APIClientResponseError
 
 from ..utils import keyboards
 from ..utils.i18n import Localizer
-from ..utils.topic import ComplaintManager
-from ...api.mytonstorage import AddReportPayload
+from ..utils.report import (
+    ReportData,
+    parse_report_text,
+    format_report_text,
+    create_report_markup,
+    reverse_reason_key,
+    toggle_vote,
+)
+from ...api import UpdateBanItem, UpdateBansPayload, api_retry
 from ...config import GROUP_ID, TIMEZONE
 from ...context import Context
 from ...database import UnitOfWork
-from ...database.enums import VoteDecision, ComplaintStatus
-from ...database.models import UserModel, VoteModel, ComplaintModel
+from ...database.models import UserModel
 
 logger = logging.getLogger(__name__)
 router = Router()
 id_router = Router()
+id_router.message.filter(F.chat.type.in_({ChatType.GROUP, ChatType.SUPERGROUP}))
+
+router.message.filter(
+    F.chat.id == GROUP_ID,
+    F.chat.type.in_({ChatType.GROUP, ChatType.SUPERGROUP}),
+)
+router.callback_query.filter(
+    F.message.chat.id == GROUP_ID,
+    F.message.chat.type.in_({ChatType.GROUP, ChatType.SUPERGROUP}),
+)
+
+
+def _safe_loc(loc: Localizer, key: str, fallback: str = "—") -> str:
+    template = loc.get_nested(loc.locale_data, key)  # type: ignore
+    return template if template else fallback
+
+
+async def _edit_report(
+    bot,
+    message_id: int,
+    data: ReportData,
+    with_buttons: bool = True,
+) -> None:
+    text = format_report_text(data)
+    markup = create_report_markup(data.reason_display) if with_buttons else None
+    try:
+        await bot.edit_message_text(
+            chat_id=GROUP_ID,
+            message_id=message_id,
+            text=text,
+            reply_markup=markup,
+        )
+    except TelegramBadRequest as e:
+        if "message is not modified" not in e.message:
+            raise
+
+
+async def _ban_via_api(ctx: Context, data: ReportData, admin: UserModel) -> None:
+    payload = UpdateBansPayload(
+        [  # noqa
+            UpdateBanItem(
+                bag_id=data.bag_id,
+                admin=admin.sender,
+                reason=data.reason or data.reason_display,
+                comment=data.problem or "",
+                status=True,
+            ),
+        ]
+    )
+    await api_retry(lambda: ctx.mytonstorage.bans.update(bans=payload))
 
 
 @id_router.message(Command("id"))
 async def group_id_command(message: Message) -> None:
-    text = hcode(message.chat.id)
-    await message.reply(text)
-
-
-router.message.filter(
-    *[
-        F.chat.id == GROUP_ID,
-        F.chat.type.in_({ChatType.GROUP, ChatType.SUPERGROUP}),
-    ]
-)
-router.callback_query.filter(
-    *[
-        F.message.chat.id == GROUP_ID,
-        F.message.chat.type.in_({ChatType.GROUP, ChatType.SUPERGROUP}),
-    ]
-)
+    await message.reply(hcode(message.chat.id))
 
 
 @router.message(Command("info"))
@@ -49,10 +91,7 @@ async def info_command(
     uow: UnitOfWork,
     localizer: Localizer,
 ) -> None:
-    user_topic = await uow.user_topic.get(message_thread_id=message.message_thread_id)
-    if user_topic is None:
-        return
-    user = await uow.user.get(user_id=user_topic.user_id)
+    user = await uow.user.get(message_thread_id=message.message_thread_id)
     if user is None:
         return
 
@@ -61,9 +100,11 @@ async def info_command(
         user_id=user.user_id,
         username=user.mention,
         full_name=user.full_name,
-        language_code=user.language_code,
-        state=localizer(f"common.state.{user.state}"),
-        is_banned=localizer(f"common.banned._{user.is_banned}"),
+        language_code=_safe_loc(
+            localizer, f"common.lang.{user.language_code}", user.language_code or "—"
+        ),
+        state=_safe_loc(localizer, f"common.state.{user.state}", user.state),
+        is_banned=localizer("common.yes") if user.is_banned else localizer("common.no"),
         created_at=user.created_at.strftime("%Y-%m-%d %H:%M"),
     )
     await message.reply(text=text)
@@ -76,62 +117,14 @@ async def ban_unban_command(
     uow: UnitOfWork,
     localizer: Localizer,
 ) -> None:
-    user_topic = await uow.user_topic.get(message_thread_id=message.message_thread_id)
-    if user_topic is None:
-        return
-    user = await uow.user.get(user_id=user_topic.user_id)
+    user = await uow.user.get(message_thread_id=message.message_thread_id)
     if user is None:
         return
 
-    text = localizer(
-        f"messages.command_{command.command}",
-        user_mention=user.mention,
-    )
-    user.is_banned = True if command.command == "ban" else False
+    user.is_banned = command.command == "ban"
     await uow.user.upsert(user)
+    text = localizer(f"messages.command_{command.command}", user_mention=user.mention)
     await message.reply(text=text)
-
-
-async def update_vote_status(
-    uow: UnitOfWork,
-    complaint: ComplaintModel,
-    user_model: UserModel,
-    decision: VoteDecision,
-) -> None:
-    now = datetime.now(TIMEZONE)
-    existing = await uow.vote.get(
-        complaint_id=complaint.id,
-        moderator_id=user_model.user_id,
-    )
-
-    if existing:
-        if existing.decision == decision:
-            await uow.vote.delete(
-                complaint_id=complaint.id,
-                moderator_id=user_model.user_id,
-            )
-        else:
-            await uow.vote.update(
-                filters={
-                    "complaint_id": complaint.id,
-                    "moderator_id": user_model.user_id,
-                },
-                values={
-                    "decision": decision,
-                    "created_at": now,
-                },
-            )
-    else:
-        await uow.vote.create(
-            VoteModel(
-                complaint_id=complaint.id,
-                moderator_id=user_model.user_id,
-                decision=decision,
-                created_at=now,
-            )
-        )
-
-    await uow.session.flush()
 
 
 @router.callback_query()
@@ -140,90 +133,119 @@ async def callback_query_handler(
     ctx: Context,
     localizer: Localizer,
     user_model: UserModel,
-    uow: UnitOfWork,
 ) -> None:
-    message_id = call.message.message_id
-    complaint = await uow.complaint.get(message_id=message_id)
-
-    if complaint is None:
+    if isinstance(call.message, InaccessibleMessage):
         await call.answer()
         return
 
-    now = datetime.now(TIMEZONE)
-    reason_map: dict = localizer("reason")  # noqa
-    complaint_manager = ComplaintManager(ctx, uow, complaint)
+    html_text = call.message.text and call.message.html_text
+    if not html_text:
+        await call.answer()
+        return
 
-    await complaint_manager.ensure_admins()
+    report = parse_report_text(html_text)
+    if report is None or report.status != "pending":
+        await call.answer()
+        return
+
+    reason_map: dict = localizer("reason")  # type: ignore
+    report.reason = reverse_reason_key(reason_map, report.reason_display)
+    msg_id = call.message.message_id
 
     if call.data == "change_reason":
-        text = localizer(
-            "messages.change_reason",
-            report_id=complaint.public_id,
-            bag_id=complaint.bag_id,
-            reason=localizer(f"reason.{complaint.reason}"),
-            problem=complaint.problem,
-        )
-        reply_markup = keyboards.select_reason(localizer)
-        await ctx.bot.edit_message_text(
-            text=text,
-            chat_id=GROUP_ID,
-            message_id=message_id,
-            reply_markup=reply_markup,
-        )
+        try:
+            await ctx.bot.edit_message_reply_markup(
+                chat_id=GROUP_ID,
+                message_id=msg_id,
+                reply_markup=keyboards.select_reason(localizer),
+            )
+        except TelegramBadRequest:
+            pass
 
-    elif call.data in reason_map.keys():
-        complaint.reason = call.data
-        complaint.updated_at = now
-        await uow.complaint.upsert(complaint)
-        await complaint_manager.update_complaint()
-
-    elif call.data in {"approve", "reject"}:
-        if call.data == "approve":
-            decision = VoteDecision.APPROVE
-        else:
-            decision = VoteDecision.REJECT
-
-        if user_model.user_id not in complaint_manager.admins_ids:
-            await update_vote_status(uow, complaint, user_model, decision)
-            await complaint_manager.ensure_votes()
-            if complaint_manager.ready_for_admin:
-                await complaint_manager.ping_admins()
-
-        else:
-            await complaint_manager.ensure_votes()
-            complaint.resolved_by = user_model.user_id
-            complaint.resolved_at = now
-            if decision == VoteDecision.APPROVE:
-                complaint.status = ComplaintStatus.APPROVED
-            else:
-                complaint.status = ComplaintStatus.REJECTED
-            complaint.updated_at = now
-            await uow.complaint.upsert(complaint)
-            complaint_manager.complaint = complaint
-
-            if decision == VoteDecision.APPROVE:
-                report = AddReportPayload(
-                    bag_id=complaint.bag_id,
-                    reason=complaint.reason,
-                    comment=complaint.problem,
-                    sender=user_model.sender,
-                )
-                for attempt in range(1, 4):
-                    try:
-                        await ctx.mytonstorage.reports.add(report)
-                        break
-                    except Exception as e:
-                        logger.warning(
-                            "MyTonStorage API attempt %d/3 failed: %s", attempt, e,
-                        )
-                        if attempt == 3:
-                            logger.exception("Failed to send report to MyTonStorage")
-                        else:
-                            await asyncio.sleep(attempt)
-
-        await complaint_manager.update_complaint()
+    elif call.data in reason_map:
+        report.reason = call.data
+        report.reason_display = reason_map[call.data]
+        await _edit_report(ctx.bot, msg_id, report)
 
     elif call.data == "back":
-        await complaint_manager.update_complaint()
+        await _edit_report(ctx.bot, msg_id, report)
+
+    elif call.data in {"approve", "reject"}:
+        admins = await ctx.bot.get_chat_administrators(chat_id=GROUP_ID)
+        admin_ids = {a.user.id for a in admins if not a.user.is_bot}
+        mention = user_model.mention
+
+        if user_model.user_id in admin_ids:
+            await _handle_admin_decision(
+                call, ctx, localizer, report, user_model, mention, msg_id
+            )
+        else:
+            await _handle_moderator_vote(
+                call, ctx, localizer, report, admins, mention, msg_id
+            )
 
     await call.answer()
+
+
+async def _handle_moderator_vote(
+    call: CallbackQuery,
+    ctx: Context,
+    localizer: Localizer,
+    report: ReportData,
+    admins,
+    mention: str,
+    msg_id: int,
+) -> None:
+    if call.data == "approve":
+        report.approve_mentions = toggle_vote(report.approve_mentions, mention)
+        report.reject_mentions = [m for m in report.reject_mentions if m != mention]
+    else:
+        report.reject_mentions = toggle_vote(report.reject_mentions, mention)
+        report.approve_mentions = [m for m in report.approve_mentions if m != mention]
+
+    await _edit_report(ctx.bot, msg_id, report)
+
+    if len(report.approve_mentions) >= 2:
+        admin_mentions = ", ".join(
+            a.user.mention_html() for a in admins if not a.user.is_bot
+        )
+        await ctx.bot.send_message(
+            chat_id=GROUP_ID,
+            text=localizer("messages.report_waiting", admins=admin_mentions),
+            message_thread_id=call.message.message_thread_id,
+            reply_to_message_id=msg_id,
+        )
+
+
+async def _handle_admin_decision(
+    call: CallbackQuery,
+    ctx: Context,
+    localizer: Localizer,
+    report: ReportData,
+    user_model: UserModel,
+    mention: str,
+    msg_id: int,
+) -> None:
+    resolved_at = datetime.now(TIMEZONE).strftime("%Y-%m-%d %H:%M")
+    report.resolved_by = mention
+    report.resolved_at = resolved_at
+
+    if call.data == "approve":
+        report.status = "approved"
+        try:
+            await _ban_via_api(ctx, report, user_model)
+        except APIClientResponseError as e:
+            logger.exception("Failed to send ban to API")
+            await call.answer(
+                localizer("errors.api", status_code=e.status_code, message=e.message),
+                show_alert=True,
+            )
+            return
+        except Exception as e:
+            logger.exception("Failed to send ban to API")
+            await call.answer(localizer("errors.unknown", error=e), show_alert=True)
+            return
+    else:
+        report.status = "rejected"
+
+    await _edit_report(ctx.bot, msg_id, report, with_buttons=False)

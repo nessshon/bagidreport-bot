@@ -3,13 +3,12 @@ from __future__ import annotations
 import typing as t
 from typing import TypeVar
 
-from sqlalchemy import delete, exists, func, select, update, Delete, Select, Update
+from sqlalchemy import func, select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import BaseModel
 
 _TModel = TypeVar("_TModel", bound=BaseModel)
-_TStmt = t.TypeVar("_TStmt", bound=t.Union[Select, Update, Delete])
 
 
 class BaseRepository(t.Generic[_TModel]):
@@ -20,9 +19,9 @@ class BaseRepository(t.Generic[_TModel]):
 
     def _build_filters(
         self,
-        stmt: _TStmt,
+        stmt: Select,
         filters: t.Dict[str, t.Any],
-    ) -> _TStmt:
+    ) -> Select:
         for field, value in filters.items():
             column = getattr(self.model, field)
             cond = column.in_(value) if isinstance(value, list) else column == value
@@ -71,45 +70,8 @@ class BaseRepository(t.Generic[_TModel]):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def list_in(
-        self,
-        field: t.Any,
-        values: t.List[t.Any],
-    ) -> t.List[_TModel]:
-        if not values:
-            return []
-        stmt = select(self.model).where(field.in_(values))
-        res = await self.session.execute(stmt)
-        return list(res.scalars().all())
-
-    async def all(self) -> t.List[_TModel]:
-        stmt: Select = select(self.model)
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def update(
-        self,
-        filters: t.Dict[str, t.Any],
-        values: t.Dict[str, t.Any],
-    ) -> t.Optional[_TModel]:
-        stmt: Update = update(self.model).values(**values).returning(self.model)
-        stmt = self._build_filters(stmt, filters)
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
-
-    async def delete(self, **filters: t.Any) -> None:
-        stmt: Delete = delete(self.model)
-        stmt = self._build_filters(stmt, filters)
-        await self.session.execute(stmt)
-
     async def count(self, **filters: t.Any) -> int:
         stmt: Select = select(func.count()).select_from(self.model)
         stmt = self._build_filters(stmt, filters)
         result = await self.session.execute(stmt)
         return result.scalar() or 0
-
-    async def exists(self, **filters: t.Any) -> bool:
-        filtered = self._build_filters(select(self.model), filters)
-        stmt: Select = select(exists(filtered.subquery()))
-        result = await self.session.execute(stmt)
-        return result.scalar()

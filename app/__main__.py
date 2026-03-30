@@ -6,10 +6,11 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.exceptions import TelegramRetryAfter
 from aiogram.fsm.storage.base import DefaultKeyBuilder
 from aiogram.fsm.storage.redis import RedisStorage
+from aiogram_dialog import setup_dialogs
 from redis.asyncio import Redis
 
-from .api.mytonstorage import MytonstorageClient
-from .bot import commands, middlewares, handlers, Broadcaster
+from .api import MytonstorageClient
+from .bot import commands, middlewares, handlers, dialogs
 from .bot.utils.i18n import I18N
 from .config import BOT_TOKEN, REDIS_URL
 from .context import Context, set_context
@@ -27,7 +28,9 @@ async def on_startup(ctx: Context) -> None:
     await ctx.mytonstorage.ensure_session()
 
     middlewares.register(ctx.dp)
+    dialogs.register(ctx.dp)
     handlers.register(ctx.dp)
+    setup_dialogs(ctx.dp)
 
     with suppress(TelegramRetryAfter):
         await commands.setup(ctx)
@@ -68,7 +71,6 @@ async def main() -> None:
     ctx.dp = Dispatcher(storage=storage, ctx=ctx)
 
     ctx.mytonstorage = MytonstorageClient()
-    ctx.broadcaster = Broadcaster(ctx.bot)
     ctx.i18n = I18N()
 
     ctx.dp.startup.register(on_startup)

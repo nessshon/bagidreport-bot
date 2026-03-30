@@ -2,9 +2,10 @@ import typing as t
 from datetime import datetime
 
 from aiogram import BaseMiddleware
-from aiogram.types import TelegramObject, User
+from aiogram.enums import ChatType
+from aiogram.types import TelegramObject, User, Chat, Update
 
-from ...config import TIMEZONE
+from ...config import TIMEZONE, ADMIN_IDS_SET
 from ...context import Context
 from ...database.models import UserModel
 from ...database.unitofwork import UnitOfWork
@@ -22,6 +23,7 @@ class DbSessionMiddleware(BaseMiddleware):
         data: t.Dict[str, t.Any],
     ) -> t.Optional[t.Any]:
         user: t.Optional[User] = data.get("event_from_user")
+        chat: t.Optional[Chat] = data.get("event_chat")
         ctx: t.Optional[Context] = data.get("ctx")
         uow = UnitOfWork(ctx.db.session_factory)
 
@@ -43,6 +45,21 @@ class DbSessionMiddleware(BaseMiddleware):
                     user_model = existing
                     await uow.session.flush()
 
+                if (
+                    user_model
+                    and user_model.is_banned
+                    and user_model.user_id not in ADMIN_IDS_SET
+                    and chat
+                    and chat.type == ChatType.PRIVATE
+                    and not self._is_my_chat_member(data)
+                ):
+                    return None
+
             data["user_model"] = user_model
             data["uow"] = uow
             return await handler(event, data)
+
+    @staticmethod
+    def _is_my_chat_member(data: t.Dict[str, t.Any]) -> bool:
+        update: t.Optional[Update] = data.get("event_update")
+        return update is not None and update.my_chat_member is not None
