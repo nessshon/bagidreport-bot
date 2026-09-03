@@ -134,3 +134,6 @@ dmypy.json
 .idea/
 .idea/*
 .DS_Store
+
+# App logs (incl. rotated app.log.<date>)
+.logs/
