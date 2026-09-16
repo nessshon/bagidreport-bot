@@ -1,9 +1,9 @@
+import asyncio
 import logging
 from contextlib import suppress
 
 from aiogram import Dispatcher, Bot
 from aiogram.client.default import DefaultBotProperties
-from aiogram.exceptions import TelegramRetryAfter
 from aiogram.fsm.storage.base import DefaultKeyBuilder
 from aiogram.fsm.storage.redis import RedisStorage
 from aiogram_dialog import setup_dialogs
@@ -11,8 +11,9 @@ from redis.asyncio import Redis
 
 from .api import MytonstorageClient
 from .bot import commands, middlewares, handlers, dialogs
+from .bot.heartbeat import HeartbeatMiddleware
 from .bot.utils.i18n import I18N
-from .config import BOT_TOKEN, REDIS_URL
+from .config import BOT_TOKEN, REDIS_URL, GATUS_HEARTBEAT_URL, GATUS_HEARTBEAT_TOKEN
 from .context import Context, set_context
 from .database import Database
 from .logging import setup_logging
@@ -26,14 +27,15 @@ async def on_startup(ctx: Context) -> None:
 
     await ctx.db.start()
     await ctx.mytonstorage.ensure_session()
-
-    middlewares.register(ctx.dp)
-    dialogs.register(ctx.dp)
-    handlers.register(ctx.dp)
-    setup_dialogs(ctx.dp)
-
-    with suppress(TelegramRetryAfter):
+    with suppress(Exception):
         await commands.setup(ctx)
+
+    if GATUS_HEARTBEAT_URL and GATUS_HEARTBEAT_TOKEN:
+        ctx.heartbeat_task = asyncio.create_task(
+            ctx.heartbeat.run(GATUS_HEARTBEAT_URL, GATUS_HEARTBEAT_TOKEN)
+        )
+    elif GATUS_HEARTBEAT_URL:
+        logger.warning("GATUS_HEARTBEAT_URL is set but GATUS_HEARTBEAT_TOKEN is empty; heartbeat disabled")
 
     logger.info("App startup complete")
 
@@ -41,8 +43,10 @@ async def on_startup(ctx: Context) -> None:
 async def on_shutdown(ctx: Context) -> None:
     logger.info("App shutdown initiated...")
 
-    with suppress(TelegramRetryAfter):
+    with suppress(Exception):
         await commands.delete(ctx)
+    if getattr(ctx, "heartbeat_task", None):
+        ctx.heartbeat_task.cancel()
     await ctx.bot.session.close()
     await ctx.redis.aclose()
     await ctx.db.shutdown()
@@ -70,6 +74,14 @@ async def main() -> None:
     ctx.bot = Bot(BOT_TOKEN, default=properties)
     ctx.dp = Dispatcher(storage=storage, ctx=ctx)
 
+    middlewares.register(ctx.dp)
+    dialogs.register(ctx.dp)
+    handlers.register(ctx.dp)
+    setup_dialogs(ctx.dp)
+
+    ctx.heartbeat = HeartbeatMiddleware()
+    ctx.bot.session.middleware(ctx.heartbeat)
+
     ctx.mytonstorage = MytonstorageClient()
     ctx.i18n = I18N()
 
@@ -77,11 +89,9 @@ async def main() -> None:
     ctx.dp.shutdown.register(on_shutdown)
     set_context(ctx)
 
-    allowed_updates = ctx.dp.resolve_used_update_types()
+    allowed_updates = ctx.dp.resolve_used_update_types(skip_events={"aiogd_update"})
     await ctx.dp.start_polling(ctx.bot, allowed_updates=allowed_updates)
 
 
 if __name__ == "__main__":
-    import asyncio
-
     asyncio.run(main())

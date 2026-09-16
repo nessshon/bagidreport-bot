@@ -37,4 +37,4 @@ def setup_logging(
     root_logger.addHandler(console_handler)
     root_logger.addHandler(file_handler)
 
-    logging.getLogger("aiogram").setLevel(logging.WARNING)
+    logging.getLogger("aiogram.event").setLevel(logging.WARNING)
